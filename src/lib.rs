@@ -2,11 +2,14 @@ pub mod game;
 
 #[cfg(test)]
 mod tests {
-    use super::game::setting;
+    use super::game;
     #[test]
     fn it_works() {
-        let setting = setting::GameSetting::new(3, 3);
-        println!("{:?}", setting);
+        let game = game::Game::new(game::setting::GameSetting {
+            block_height: 3,
+            block_width: 3,
+        });
+        println!("{:?}", game);
         assert_eq!(2 + 2, 4);
     }
 }

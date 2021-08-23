@@ -1,11 +1,12 @@
 pub mod cell;
+pub mod group;
 pub mod setting;
 
 pub struct NormalGame {
     pub block_height: u8,
     pub block_width: u8,
     pub answer_candidate: Vec<u8>,
-    pub cells: Vec<cell::Cell>,
+    pub cells: cell::Cells,
 }
 
 impl NormalGame {
@@ -14,7 +15,7 @@ impl NormalGame {
             block_height: setting.block_height,
             block_width: setting.block_width,
             answer_candidate: (1..=(setting.block_height * setting.block_width)).collect(),
-            cells: cell::create_cells(setting),
+            cells: cell::Cells::create_cells(&setting),
         }
     }
 }

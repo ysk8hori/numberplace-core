@@ -26,6 +26,7 @@ impl Position {
     }
 }
 
+#[derive(Debug)]
 pub struct Cells {
     cells: Vec<Rc<Cell>>,
 }

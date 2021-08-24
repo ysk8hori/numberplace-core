@@ -1,14 +1,23 @@
 use crate::normal_game::setting;
 use std::rc::Rc;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Cell {
     pos: Position,
+}
+
+impl Cell {
+    pub fn pos(&self) -> &Position {
+        &self.pos
+    }
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Position(u8, u8);
 impl Position {
+    pub fn new(row: u8, col: u8) -> Position {
+        Position(row, col)
+    }
     pub fn row(&self) -> u8 {
         self.0
     }
@@ -28,12 +37,21 @@ impl Cells {
 }
 
 impl Cells {
-    pub fn filter_by_row(&self, row: u8) -> Vec<Rc<Cell>> {
+    pub fn filter<P>(&self, predicate: P) -> Vec<Rc<Cell>>
+    where
+        P: FnMut(&&Rc<Cell>) -> bool,
+    {
         self.cells
             .iter()
-            .filter(|c| c.pos.row() == row)
+            .filter(predicate)
             .map(|c| c.clone())
             .collect()
+    }
+    pub fn filter_by_row(&self, row: u8) -> Vec<Rc<Cell>> {
+        self.filter(|c| c.pos.row() == row)
+    }
+    pub fn filter_by_column(&self, column: u8) -> Vec<Rc<Cell>> {
+        self.filter(|c| c.pos.col() == column)
     }
 
     pub fn create_cells(setting: &setting::GameSetting) -> Cells {
@@ -126,6 +144,53 @@ mod tests {
                     &Position(3, 6),
                 ]
             )
+        }
+        #[test]
+        fn test_filter() {
+            let cells_by_col = Cells::create_cells(&setting::GameSetting {
+                block_height: 2,
+                block_width: 3,
+            })
+            .filter(|c| c.pos.col() == 3);
+            let rows: Vec<&Position> = cells_by_col.iter().map(|c| &c.pos).collect();
+            assert_eq!(
+                rows,
+                [
+                    &Position(1, 3),
+                    &Position(2, 3),
+                    &Position(3, 3),
+                    &Position(4, 3),
+                    &Position(5, 3),
+                    &Position(6, 3),
+                ]
+            )
+        }
+        #[test]
+        fn test_filter_by_column() {
+            let cells_by_col = Cells::create_cells(&setting::GameSetting {
+                block_height: 2,
+                block_width: 3,
+            })
+            .filter_by_column(3);
+            let rows: Vec<&Position> = cells_by_col.iter().map(|c| &c.pos).collect();
+            assert_eq!(
+                rows,
+                [
+                    &Position(1, 3),
+                    &Position(2, 3),
+                    &Position(3, 3),
+                    &Position(4, 3),
+                    &Position(5, 3),
+                    &Position(6, 3),
+                ]
+            )
+        }
+    }
+    mod test_position {
+        use super::*;
+        #[test]
+        fn test_assert_eq() {
+            assert_eq!(Position::new(1, 2), Position::new(1, 2));
         }
     }
 }

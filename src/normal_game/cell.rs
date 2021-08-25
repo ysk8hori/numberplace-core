@@ -57,8 +57,8 @@ impl Cells {
 
     pub fn create_cells(setting: &setting::GameSetting) -> Cells {
         let mut cells = Vec::new();
-        for row in 1..=setting.side_size() {
-            for col in 1..=setting.side_size() {
+        for row in 0..setting.side_size() {
+            for col in 0..setting.side_size() {
                 cells.push(Rc::new(Cell {
                     pos: Position(row, col),
                 }));
@@ -95,7 +95,7 @@ mod tests {
                     })
                     .cells[0]
                         .pos,
-                    Position(1, 1)
+                    Position(0, 0)
                 );
             }
             #[test]
@@ -107,7 +107,7 @@ mod tests {
                     })
                     .cells[1]
                         .pos,
-                    Position(1, 2)
+                    Position(0, 1)
                 );
             }
             #[test]
@@ -119,7 +119,7 @@ mod tests {
                     })
                     .cells[35]
                         .pos,
-                    Position(6, 6)
+                    Position(5, 5)
                 );
             }
         }
@@ -132,17 +132,17 @@ mod tests {
                 block_height: 2,
                 block_width: 3,
             })
-            .filter_by_row(3);
+            .filter_by_row(2);
             let rows: Vec<&Position> = cells_by_row.iter().map(|c| &c.pos).collect();
             assert_eq!(
                 rows,
                 [
-                    &Position(3, 1),
-                    &Position(3, 2),
-                    &Position(3, 3),
-                    &Position(3, 4),
-                    &Position(3, 5),
-                    &Position(3, 6),
+                    &Position(2, 0),
+                    &Position(2, 1),
+                    &Position(2, 2),
+                    &Position(2, 3),
+                    &Position(2, 4),
+                    &Position(2, 5),
                 ]
             )
         }
@@ -152,17 +152,17 @@ mod tests {
                 block_height: 2,
                 block_width: 3,
             })
-            .filter(|c| c.pos.col() == 3);
+            .filter(|c| c.pos.col() == 2);
             let rows: Vec<&Position> = cells_by_col.iter().map(|c| &c.pos).collect();
             assert_eq!(
                 rows,
                 [
-                    &Position(1, 3),
-                    &Position(2, 3),
-                    &Position(3, 3),
-                    &Position(4, 3),
-                    &Position(5, 3),
-                    &Position(6, 3),
+                    &Position(0, 2),
+                    &Position(1, 2),
+                    &Position(2, 2),
+                    &Position(3, 2),
+                    &Position(4, 2),
+                    &Position(5, 2),
                 ]
             )
         }
@@ -172,17 +172,17 @@ mod tests {
                 block_height: 2,
                 block_width: 3,
             })
-            .filter_by_column(3);
+            .filter_by_column(2);
             let rows: Vec<&Position> = cells_by_col.iter().map(|c| &c.pos).collect();
             assert_eq!(
                 rows,
                 [
-                    &Position(1, 3),
-                    &Position(2, 3),
-                    &Position(3, 3),
-                    &Position(4, 3),
-                    &Position(5, 3),
-                    &Position(6, 3),
+                    &Position(0, 2),
+                    &Position(1, 2),
+                    &Position(2, 2),
+                    &Position(3, 2),
+                    &Position(4, 2),
+                    &Position(5, 2),
                 ]
             )
         }

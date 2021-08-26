@@ -23,7 +23,7 @@ fn create_vertical_groups(cells: &cell::Cells, setting: &setting::GameSetting) -
     cols.iter()
         .map(|n| {
             Rc::new(Group {
-                cells: cell::Cells::new(cells.filter_by_column(*n)),
+                cells: cells.filter_by_column(*n),
             })
         })
         .collect()
@@ -34,7 +34,7 @@ fn create_horizontal_groups(cells: &cell::Cells, setting: &setting::GameSetting)
     rows.iter()
         .map(|n| {
             Rc::new(Group {
-                cells: cell::Cells::new(cells.filter_by_row(*n)),
+                cells: cells.filter_by_row(*n),
             })
         })
         .collect()

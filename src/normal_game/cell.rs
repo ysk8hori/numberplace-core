@@ -69,23 +69,40 @@ impl Cells {
     pub fn new(cells: Vec<Rc<Cell>>) -> Cells {
         Cells { cells }
     }
+
+    pub fn create_cells(setting: &setting::GameSetting) -> Cells {
+        let mut cells = Vec::new();
+        for row in 0..setting.side_size() {
+            for col in 0..setting.side_size() {
+                cells.push(Rc::new(Cell::new(
+                    Position(row, col),
+                    setting.answer_candidate(),
+                )));
+            }
+        }
+        Cells { cells }
+    }
+
     pub fn len(&self) -> usize {
         self.cells.len()
     }
-    pub fn filter<P>(&self, predicate: P) -> Vec<Rc<Cell>>
+    pub fn filter<P>(&self, predicate: P) -> Cells
     where
         P: FnMut(&&Rc<Cell>) -> bool,
     {
-        self.cells
-            .iter()
-            .filter(predicate)
-            .map(|c| c.clone())
-            .collect()
+        Cells {
+            cells: self
+                .cells
+                .iter()
+                .filter(predicate)
+                .map(|c| c.clone())
+                .collect(),
+        }
     }
-    pub fn filter_by_row(&self, row: u8) -> Vec<Rc<Cell>> {
+    pub fn filter_by_row(&self, row: u8) -> Cells {
         self.filter(|c| c.pos.row() == row)
     }
-    pub fn filter_by_column(&self, column: u8) -> Vec<Rc<Cell>> {
+    pub fn filter_by_column(&self, column: u8) -> Cells {
         self.filter(|c| c.pos.col() == column)
     }
     pub fn find_by_position(&self, position: &Position) -> Option<Rc<Cell>> {
@@ -100,19 +117,6 @@ impl Cells {
         } else {
             Some(self.cells[index].clone())
         }
-    }
-
-    pub fn create_cells(setting: &setting::GameSetting) -> Cells {
-        let mut cells = Vec::new();
-        for row in 0..setting.side_size() {
-            for col in 0..setting.side_size() {
-                cells.push(Rc::new(Cell::new(
-                    Position(row, col),
-                    setting.answer_candidate(),
-                )));
-            }
-        }
-        Cells { cells }
     }
 
     pub fn positions(&self) -> Vec<Position> {
@@ -167,48 +171,48 @@ mod tests {
         #[test]
         fn test_filter_by_row() {
             let cells_by_row = Cells::create_cells(&SETTING).filter_by_row(2);
-            let rows: Vec<&Position> = cells_by_row.iter().map(|c| &c.pos).collect();
+            let rows = cells_by_row.positions();
             assert_eq!(
                 rows,
                 [
-                    &Position(2, 0),
-                    &Position(2, 1),
-                    &Position(2, 2),
-                    &Position(2, 3),
-                    &Position(2, 4),
-                    &Position(2, 5),
+                    Position(2, 0),
+                    Position(2, 1),
+                    Position(2, 2),
+                    Position(2, 3),
+                    Position(2, 4),
+                    Position(2, 5),
                 ]
             )
         }
         #[test]
         fn test_filter() {
             let cells_by_col = Cells::create_cells(&SETTING).filter(|c| c.pos.col() == 2);
-            let rows: Vec<&Position> = cells_by_col.iter().map(|c| &c.pos).collect();
+            let cols = cells_by_col.positions();
             assert_eq!(
-                rows,
+                cols,
                 [
-                    &Position(0, 2),
-                    &Position(1, 2),
-                    &Position(2, 2),
-                    &Position(3, 2),
-                    &Position(4, 2),
-                    &Position(5, 2),
+                    Position(0, 2),
+                    Position(1, 2),
+                    Position(2, 2),
+                    Position(3, 2),
+                    Position(4, 2),
+                    Position(5, 2),
                 ]
             )
         }
         #[test]
         fn test_filter_by_column() {
             let cells_by_col = Cells::create_cells(&SETTING).filter_by_column(2);
-            let rows: Vec<&Position> = cells_by_col.iter().map(|c| &c.pos).collect();
+            let cols = cells_by_col.positions();
             assert_eq!(
-                rows,
+                cols,
                 [
-                    &Position(0, 2),
-                    &Position(1, 2),
-                    &Position(2, 2),
-                    &Position(3, 2),
-                    &Position(4, 2),
-                    &Position(5, 2),
+                    Position(0, 2),
+                    Position(1, 2),
+                    Position(2, 2),
+                    Position(3, 2),
+                    Position(4, 2),
+                    Position(5, 2),
                 ]
             )
         }

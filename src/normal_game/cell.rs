@@ -5,6 +5,7 @@ use std::rc::Rc;
 pub struct Cell {
     pos: Position,
     answer_candidate: Vec<u8>,
+    answer: Option<u8>,
 }
 
 impl Cell {
@@ -12,18 +13,13 @@ impl Cell {
         Cell {
             pos: position,
             answer_candidate,
+            answer: None,
         }
     }
     pub fn pos(&self) -> Position {
         self.pos
     }
     pub fn remove_answer_candidate(&mut self, target: &u8) {
-        // let a: Vec<u8> = self
-        //     .answer_candidate
-        //     .iter()
-        //     .filter(|a| **a != target)
-        //     .map(|a| *a)
-        //     .collect();
         if let Ok(index) = self.answer_candidate.binary_search(target) {
             self.answer_candidate.remove(index);
         }
@@ -96,10 +92,10 @@ impl Cells {
         let mut cells = Vec::new();
         for row in 0..setting.side_size() {
             for col in 0..setting.side_size() {
-                cells.push(Rc::new(Cell {
-                    pos: Position(row, col),
-                    answer_candidate: setting.answer_candidate(),
-                }));
+                cells.push(Rc::new(Cell::new(
+                    Position(row, col),
+                    setting.answer_candidate(),
+                )));
             }
         }
         Cells { cells }

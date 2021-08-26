@@ -4,11 +4,15 @@ use std::rc::Rc;
 #[derive(Debug, PartialEq)]
 pub struct Cell {
     pos: Position,
+    answer_candidate: Vec<u8>,
 }
 
 impl Cell {
-    pub fn new(position: Position) -> Cell {
-        Cell { pos: position }
+    pub fn new(position: Position, answer_candidate: Vec<u8>) -> Cell {
+        Cell {
+            pos: position,
+            answer_candidate,
+        }
     }
     pub fn pos(&self) -> Position {
         self.pos
@@ -83,6 +87,7 @@ impl Cells {
             for col in 0..setting.side_size() {
                 cells.push(Rc::new(Cell {
                     pos: Position(row, col),
+                    answer_candidate: setting.answer_candidate(),
                 }));
             }
         }
@@ -219,14 +224,15 @@ mod tests {
         fn test_find_by_position() {
             let pos = Position(0, 0);
             assert_eq!(
-                *Cells::create_cells(&setting::GameSetting {
+                Cells::create_cells(&setting::GameSetting {
                     block_height: 2,
                     block_width: 3,
                 })
                 .find_by_position(&pos)
                 .unwrap()
-                .as_ref(),
-                Cell::new(pos)
+                .as_ref()
+                .pos(),
+                pos
             );
         }
     }

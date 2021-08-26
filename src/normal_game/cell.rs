@@ -29,8 +29,14 @@ impl Cell {
     pub fn try_fill_own_answer(&mut self) {
         if self.answer_candidate.len() == 1 {
             self.answer = Some(self.answer_candidate[0]);
+            self.answer_candidate.clear();
         }
         return;
+    }
+    /// Fill in the Cell with your answer and clear the answer suggestions.
+    pub fn set_answer(&mut self, answer: u8) {
+        self.answer = Some(answer);
+        self.answer_candidate.clear();
     }
 }
 
@@ -237,7 +243,7 @@ mod tests {
     mod test_cell_utilities {
         use super::*;
         #[test]
-        fn test_remove_candidate() {
+        fn cell_can_remove_answer_candidate() {
             let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
             assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
             cell.remove_answer_candidate(&4);
@@ -270,6 +276,30 @@ mod tests {
             assert_eq!(cell.answer, None);
             cell.try_fill_own_answer();
             assert_eq!(cell.answer, Some(3));
+            assert_eq!(cell.answer_candidate, []);
+        }
+        mod cell_clear_candidate_when_setted_answer {
+            use super::*;
+            #[test]
+            fn when_try_fill_own_answer() {
+                let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+                assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
+                cell.remove_answer_candidate(&1);
+                cell.remove_answer_candidate(&2);
+                cell.remove_answer_candidate(&4);
+                cell.remove_answer_candidate(&5);
+                cell.remove_answer_candidate(&6);
+                cell.try_fill_own_answer();
+                assert_eq!(cell.answer_candidate, []);
+            }
+
+            #[test]
+            fn when_setted_answer() {
+                let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+                assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
+                cell.set_answer(4);
+                assert_eq!(cell.answer_candidate, []);
+            }
         }
     }
 }

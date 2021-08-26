@@ -7,12 +7,15 @@ pub struct Cell {
 }
 
 impl Cell {
-    pub fn pos(&self) -> &Position {
-        &self.pos
+    pub fn new(position: Position) -> Cell {
+        Cell { pos: position }
+    }
+    pub fn pos(&self) -> Position {
+        self.pos
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Position(u8, u8);
 impl Position {
     pub fn new(row: u8, col: u8) -> Position {
@@ -24,6 +27,12 @@ impl Position {
     pub fn col(&self) -> u8 {
         self.1
     }
+    pub fn add_row(&self, count: u8) -> Position {
+        Position(self.0 + count, self.1)
+    }
+    pub fn add_col(&self, count: u8) -> Position {
+        Position(self.0, self.1 + count)
+    }
 }
 
 #[derive(Debug)]
@@ -32,12 +41,12 @@ pub struct Cells {
 }
 
 impl Cells {
+    pub fn new(cells: Vec<Rc<Cell>>) -> Cells {
+        Cells { cells }
+    }
     pub fn len(&self) -> usize {
         self.cells.len()
     }
-}
-
-impl Cells {
     pub fn filter<P>(&self, predicate: P) -> Vec<Rc<Cell>>
     where
         P: FnMut(&&Rc<Cell>) -> bool,
@@ -54,6 +63,19 @@ impl Cells {
     pub fn filter_by_column(&self, column: u8) -> Vec<Rc<Cell>> {
         self.filter(|c| c.pos.col() == column)
     }
+    pub fn find_by_position(&self, position: &Position) -> Option<Rc<Cell>> {
+        self.cells
+            .iter()
+            .map(|cell| Rc::clone(&cell))
+            .find(|cell| cell.pos() == *position)
+    }
+    pub fn find_by_index(&self, index: usize) -> Option<Rc<Cell>> {
+        if self.cells.len() <= index {
+            None
+        } else {
+            Some(self.cells[index].clone())
+        }
+    }
 
     pub fn create_cells(setting: &setting::GameSetting) -> Cells {
         let mut cells = Vec::new();
@@ -65,6 +87,13 @@ impl Cells {
             }
         }
         Cells { cells }
+    }
+
+    pub fn positions(&self) -> Vec<Position> {
+        self.cells
+            .iter()
+            .map(|c| c.pos())
+            .collect::<Vec<Position>>()
     }
 }
 
@@ -186,12 +215,34 @@ mod tests {
                 ]
             )
         }
+        #[test]
+        fn test_find_by_position() {
+            let pos = Position(0, 0);
+            assert_eq!(
+                *Cells::create_cells(&setting::GameSetting {
+                    block_height: 2,
+                    block_width: 3,
+                })
+                .find_by_position(&pos)
+                .unwrap()
+                .as_ref(),
+                Cell::new(pos)
+            );
+        }
     }
     mod test_position {
         use super::*;
         #[test]
         fn test_assert_eq() {
             assert_eq!(Position::new(1, 2), Position::new(1, 2));
+        }
+        #[test]
+        fn test_add_row() {
+            assert_eq!(Position::new(1, 2).add_row(3), Position::new(4, 2))
+        }
+        #[test]
+        fn test_add_col() {
+            assert_eq!(Position::new(1, 2).add_col(3), Position::new(1, 5))
         }
     }
 }

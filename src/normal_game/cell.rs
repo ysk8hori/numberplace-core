@@ -17,6 +17,17 @@ impl Cell {
     pub fn pos(&self) -> Position {
         self.pos
     }
+    pub fn remove_answer_candidate(&mut self, target: &u8) {
+        // let a: Vec<u8> = self
+        //     .answer_candidate
+        //     .iter()
+        //     .filter(|a| **a != target)
+        //     .map(|a| *a)
+        //     .collect();
+        if let Ok(index) = self.answer_candidate.binary_search(target) {
+            self.answer_candidate.remove(index);
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -105,56 +116,39 @@ impl Cells {
 #[cfg(test)]
 mod tests {
     use super::*;
+    const SETTING: setting::GameSetting = setting::GameSetting {
+        block_height: 2,
+        block_width: 3,
+    };
+    mod test_gamesetting {
+        use super::*;
+        #[test]
+        fn answer_candidate_is_generated_each_time() {
+            let mut candidate1 = SETTING.answer_candidate();
+            let candidate2 = SETTING.answer_candidate();
+            candidate1.remove(0);
+            assert_ne!(candidate1, candidate2);
+        }
+    }
     mod call_create_cells {
         use super::*;
         mod given_3_2 {
             use super::*;
             #[test]
             fn returns_36_cells() {
-                assert_eq!(
-                    Cells::create_cells(&setting::GameSetting {
-                        block_height: 2,
-                        block_width: 3
-                    })
-                    .len(),
-                    36
-                )
+                assert_eq!(Cells::create_cells(&SETTING).len(), 36)
             }
             #[test]
             fn first_cell_position_is_1_1() {
-                assert_eq!(
-                    Cells::create_cells(&setting::GameSetting {
-                        block_height: 2,
-                        block_width: 3
-                    })
-                    .cells[0]
-                        .pos,
-                    Position(0, 0)
-                );
+                assert_eq!(Cells::create_cells(&SETTING).cells[0].pos, Position(0, 0));
             }
             #[test]
             fn second_cell_position_is_1_2() {
-                assert_eq!(
-                    Cells::create_cells(&setting::GameSetting {
-                        block_height: 2,
-                        block_width: 3
-                    })
-                    .cells[1]
-                        .pos,
-                    Position(0, 1)
-                );
+                assert_eq!(Cells::create_cells(&SETTING).cells[1].pos, Position(0, 1));
             }
             #[test]
             fn last_cell_position_is_6_6() {
-                assert_eq!(
-                    Cells::create_cells(&setting::GameSetting {
-                        block_height: 2,
-                        block_width: 3
-                    })
-                    .cells[35]
-                        .pos,
-                    Position(5, 5)
-                );
+                assert_eq!(Cells::create_cells(&SETTING).cells[35].pos, Position(5, 5));
             }
         }
     }
@@ -162,11 +156,7 @@ mod tests {
         use super::*;
         #[test]
         fn test_filter_by_row() {
-            let cells_by_row = Cells::create_cells(&setting::GameSetting {
-                block_height: 2,
-                block_width: 3,
-            })
-            .filter_by_row(2);
+            let cells_by_row = Cells::create_cells(&SETTING).filter_by_row(2);
             let rows: Vec<&Position> = cells_by_row.iter().map(|c| &c.pos).collect();
             assert_eq!(
                 rows,
@@ -182,11 +172,7 @@ mod tests {
         }
         #[test]
         fn test_filter() {
-            let cells_by_col = Cells::create_cells(&setting::GameSetting {
-                block_height: 2,
-                block_width: 3,
-            })
-            .filter(|c| c.pos.col() == 2);
+            let cells_by_col = Cells::create_cells(&SETTING).filter(|c| c.pos.col() == 2);
             let rows: Vec<&Position> = cells_by_col.iter().map(|c| &c.pos).collect();
             assert_eq!(
                 rows,
@@ -202,11 +188,7 @@ mod tests {
         }
         #[test]
         fn test_filter_by_column() {
-            let cells_by_col = Cells::create_cells(&setting::GameSetting {
-                block_height: 2,
-                block_width: 3,
-            })
-            .filter_by_column(2);
+            let cells_by_col = Cells::create_cells(&SETTING).filter_by_column(2);
             let rows: Vec<&Position> = cells_by_col.iter().map(|c| &c.pos).collect();
             assert_eq!(
                 rows,
@@ -224,14 +206,11 @@ mod tests {
         fn test_find_by_position() {
             let pos = Position(0, 0);
             assert_eq!(
-                Cells::create_cells(&setting::GameSetting {
-                    block_height: 2,
-                    block_width: 3,
-                })
-                .find_by_position(&pos)
-                .unwrap()
-                .as_ref()
-                .pos(),
+                Cells::create_cells(&SETTING)
+                    .find_by_position(&pos)
+                    .unwrap()
+                    .as_ref()
+                    .pos(),
                 pos
             );
         }
@@ -249,6 +228,30 @@ mod tests {
         #[test]
         fn test_add_col() {
             assert_eq!(Position::new(1, 2).add_col(3), Position::new(1, 5))
+        }
+    }
+    mod test_cell_utilities {
+        use super::*;
+        #[test]
+        fn test_remove_candidate() {
+            let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+            assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
+            cell.remove_answer_candidate(&4);
+            assert_eq!(cell.answer_candidate, [1, 2, 3, 5, 6]);
+            cell.remove_answer_candidate(&4);
+            assert_eq!(cell.answer_candidate, [1, 2, 3, 5, 6]);
+        }
+        #[test]
+        fn test_remove_all_candidate() {
+            let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+            assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
+            cell.remove_answer_candidate(&1);
+            cell.remove_answer_candidate(&2);
+            cell.remove_answer_candidate(&3);
+            cell.remove_answer_candidate(&4);
+            cell.remove_answer_candidate(&5);
+            cell.remove_answer_candidate(&6);
+            assert_eq!(cell.answer_candidate, []);
         }
     }
 }

@@ -19,10 +19,18 @@ impl Cell {
     pub fn pos(&self) -> Position {
         self.pos
     }
+    /// Deletes the specified candidate answer.
     pub fn remove_answer_candidate(&mut self, target: &u8) {
         if let Ok(index) = self.answer_candidate.binary_search(target) {
             self.answer_candidate.remove(index);
         }
+    }
+    /// Cell to confirm the answer when there is only one candidate left.
+    pub fn try_fill_own_answer(&mut self) {
+        if self.answer_candidate.len() == 1 {
+            self.answer = Some(self.answer_candidate[0]);
+        }
+        return;
     }
 }
 
@@ -248,6 +256,20 @@ mod tests {
             cell.remove_answer_candidate(&5);
             cell.remove_answer_candidate(&6);
             assert_eq!(cell.answer_candidate, []);
+        }
+        #[test]
+        fn test_try_fill_own_answer() {
+            let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+            assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
+            assert_eq!(cell.answer, None);
+            cell.remove_answer_candidate(&1);
+            cell.remove_answer_candidate(&2);
+            cell.remove_answer_candidate(&4);
+            cell.remove_answer_candidate(&5);
+            cell.remove_answer_candidate(&6);
+            assert_eq!(cell.answer, None);
+            cell.try_fill_own_answer();
+            assert_eq!(cell.answer, Some(3));
         }
     }
 }

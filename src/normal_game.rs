@@ -13,7 +13,7 @@ pub struct NormalGame {
 
 impl NormalGame {
     pub fn new(setting: setting::GameSetting) -> NormalGame {
-        let cells = cell::Cells::create_cells(&setting);
+        let cells = cell::create_cells(&setting);
         let groups = group::create_groups(&cells, &setting);
         NormalGame {
             block_height: setting.block_height,

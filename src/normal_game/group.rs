@@ -91,7 +91,7 @@ mod tests {
             block_height: 2,
             block_width: 3,
         };
-        let vg = create_vertical_groups(&cell::Cells::create_cells(&setting), &setting);
+        let vg = create_vertical_groups(&cell::create_cells(&setting), &setting);
         assert_eq!(vg.len(), 6);
         assert_eq!(vg[0].cells.len(), 6);
         assert_eq!(
@@ -117,7 +117,7 @@ mod tests {
             block_height: 2,
             block_width: 3,
         };
-        let hg = create_horizontal_groups(&cell::Cells::create_cells(&setting), &setting);
+        let hg = create_horizontal_groups(&cell::create_cells(&setting), &setting);
         assert_eq!(hg.len(), 6);
         assert_eq!(hg[0].cells.len(), 6);
         assert_eq!(
@@ -164,7 +164,7 @@ mod tests {
                 block_height: 2,
                 block_width: 3,
             };
-            let groups = create_block_groups(&cell::Cells::create_cells(&setting), &setting);
+            let groups = create_block_groups(&cell::create_cells(&setting), &setting);
             assert_eq!(groups.len(), 6);
         }
         #[test]
@@ -173,7 +173,7 @@ mod tests {
                 block_height: 2,
                 block_width: 3,
             };
-            let groups = create_block_groups(&cell::Cells::create_cells(&setting), &setting);
+            let groups = create_block_groups(&cell::create_cells(&setting), &setting);
             assert!(groups.iter().all(|g| g.cells.len() == 6));
         }
         #[test]
@@ -182,7 +182,7 @@ mod tests {
                 block_height: 2,
                 block_width: 3,
             };
-            let groups = create_block_groups(&cell::Cells::create_cells(&setting), &setting);
+            let groups = create_block_groups(&cell::create_cells(&setting), &setting);
             assert_eq!(
                 groups[0].cells.positions(),
                 vec![
@@ -201,7 +201,7 @@ mod tests {
                 block_height: 2,
                 block_width: 3,
             };
-            let groups = create_block_groups(&cell::Cells::create_cells(&setting), &setting);
+            let groups = create_block_groups(&cell::create_cells(&setting), &setting);
             assert_eq!(
                 groups[5].cells.positions(),
                 vec![

@@ -65,21 +65,21 @@ pub struct Cells {
     cells: Vec<Rc<Cell>>,
 }
 
+pub fn create_cells(setting: &setting::GameSetting) -> Cells {
+    let mut cells = Vec::new();
+    for row in 0..setting.side_size() {
+        for col in 0..setting.side_size() {
+            cells.push(Rc::new(Cell::new(
+                Position(row, col),
+                setting.answer_candidate(),
+            )));
+        }
+    }
+    Cells { cells }
+}
+
 impl Cells {
     pub fn new(cells: Vec<Rc<Cell>>) -> Cells {
-        Cells { cells }
-    }
-
-    pub fn create_cells(setting: &setting::GameSetting) -> Cells {
-        let mut cells = Vec::new();
-        for row in 0..setting.side_size() {
-            for col in 0..setting.side_size() {
-                cells.push(Rc::new(Cell::new(
-                    Position(row, col),
-                    setting.answer_candidate(),
-                )));
-            }
-        }
         Cells { cells }
     }
 
@@ -150,19 +150,19 @@ mod tests {
             use super::*;
             #[test]
             fn returns_36_cells() {
-                assert_eq!(Cells::create_cells(&SETTING).len(), 36)
+                assert_eq!(create_cells(&SETTING).len(), 36)
             }
             #[test]
             fn first_cell_position_is_1_1() {
-                assert_eq!(Cells::create_cells(&SETTING).cells[0].pos, Position(0, 0));
+                assert_eq!(create_cells(&SETTING).cells[0].pos, Position(0, 0));
             }
             #[test]
             fn second_cell_position_is_1_2() {
-                assert_eq!(Cells::create_cells(&SETTING).cells[1].pos, Position(0, 1));
+                assert_eq!(create_cells(&SETTING).cells[1].pos, Position(0, 1));
             }
             #[test]
             fn last_cell_position_is_6_6() {
-                assert_eq!(Cells::create_cells(&SETTING).cells[35].pos, Position(5, 5));
+                assert_eq!(create_cells(&SETTING).cells[35].pos, Position(5, 5));
             }
         }
     }
@@ -170,7 +170,7 @@ mod tests {
         use super::*;
         #[test]
         fn test_filter_by_row() {
-            let cells_by_row = Cells::create_cells(&SETTING).filter_by_row(2);
+            let cells_by_row = create_cells(&SETTING).filter_by_row(2);
             let rows = cells_by_row.positions();
             assert_eq!(
                 rows,
@@ -186,7 +186,7 @@ mod tests {
         }
         #[test]
         fn test_filter() {
-            let cells_by_col = Cells::create_cells(&SETTING).filter(|c| c.pos.col() == 2);
+            let cells_by_col = create_cells(&SETTING).filter(|c| c.pos.col() == 2);
             let cols = cells_by_col.positions();
             assert_eq!(
                 cols,
@@ -202,7 +202,7 @@ mod tests {
         }
         #[test]
         fn test_filter_by_column() {
-            let cells_by_col = Cells::create_cells(&SETTING).filter_by_column(2);
+            let cells_by_col = create_cells(&SETTING).filter_by_column(2);
             let cols = cells_by_col.positions();
             assert_eq!(
                 cols,
@@ -220,7 +220,7 @@ mod tests {
         fn test_find_by_position() {
             let pos = Position(0, 0);
             assert_eq!(
-                Cells::create_cells(&SETTING)
+                create_cells(&SETTING)
                     .find_by_position(&pos)
                     .unwrap()
                     .as_ref()

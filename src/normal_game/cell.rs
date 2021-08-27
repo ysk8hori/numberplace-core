@@ -105,11 +105,17 @@ impl Cells {
     pub fn filter_by_column(&self, column: u8) -> Cells {
         self.filter(|c| c.pos.col() == column)
     }
+    pub fn find<P>(&self, predicate: P) -> Option<Rc<Cell>>
+    where
+        P: FnMut(&&Rc<Cell>) -> bool,
+    {
+        match self.cells.iter().find(predicate) {
+            Some(rc) => Some(rc.clone()),
+            None => None,
+        }
+    }
     pub fn find_by_position(&self, position: &Position) -> Option<Rc<Cell>> {
-        self.cells
-            .iter()
-            .map(|cell| Rc::clone(&cell))
-            .find(|cell| cell.pos() == *position)
+        self.find(|rc_cell| rc_cell.pos() == *position)
     }
     pub fn find_by_index(&self, index: usize) -> Option<Rc<Cell>> {
         if self.cells.len() <= index {

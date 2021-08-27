@@ -1,4 +1,5 @@
 use crate::normal_game::setting;
+use std::cell::RefCell;
 use std::rc::Rc;
 
 #[derive(Debug, PartialEq)]
@@ -38,6 +39,10 @@ impl Cell {
         self.answer = Some(answer);
         self.answer_candidate.clear();
     }
+
+    pub fn has_answer_candidate(&self, candidate: u8) -> bool {
+        self.answer_candidate.iter().find(|a| **a == candidate) != None
+    }
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -62,24 +67,24 @@ impl Position {
 
 #[derive(Debug)]
 pub struct Cells {
-    cells: Vec<Rc<Cell>>,
+    cells: Vec<Rc<RefCell<Cell>>>,
 }
 
 pub fn create_cells(setting: &setting::GameSetting) -> Cells {
     let mut cells = Vec::new();
     for row in 0..setting.side_size() {
         for col in 0..setting.side_size() {
-            cells.push(Rc::new(Cell::new(
+            cells.push(Rc::new(RefCell::new(Cell::new(
                 Position(row, col),
                 setting.answer_candidate(),
-            )));
+            ))));
         }
     }
     Cells { cells }
 }
 
 impl Cells {
-    pub fn new(cells: Vec<Rc<Cell>>) -> Cells {
+    pub fn new(cells: Vec<Rc<RefCell<Cell>>>) -> Cells {
         Cells { cells }
     }
 
@@ -88,7 +93,7 @@ impl Cells {
     }
     pub fn filter<P>(&self, predicate: P) -> Cells
     where
-        P: FnMut(&&Rc<Cell>) -> bool,
+        P: FnMut(&&Rc<RefCell<Cell>>) -> bool,
     {
         Cells {
             cells: self
@@ -100,31 +105,31 @@ impl Cells {
         }
     }
     pub fn filter_by_row(&self, row: u8) -> Cells {
-        self.filter(|c| c.pos.row() == row)
+        self.filter(|c| c.borrow().pos.row() == row)
     }
     pub fn filter_by_column(&self, column: u8) -> Cells {
-        self.filter(|c| c.pos.col() == column)
+        self.filter(|c| c.borrow().pos.col() == column)
     }
-    pub fn find<P>(&self, predicate: P) -> Option<Rc<Cell>>
+    pub fn find<P>(&self, predicate: P) -> Option<Rc<RefCell<Cell>>>
     where
-        P: FnMut(&&Rc<Cell>) -> bool,
+        P: FnMut(&&Rc<RefCell<Cell>>) -> bool,
     {
         match self.cells.iter().find(predicate) {
             Some(rc) => Some(rc.clone()),
             None => None,
         }
     }
-    pub fn find_by_position(&self, position: &Position) -> Option<Rc<Cell>> {
-        self.find(|rc_cell| rc_cell.pos() == *position)
+    pub fn find_by_position(&self, position: &Position) -> Option<Rc<RefCell<Cell>>> {
+        self.find(|c| c.borrow().pos() == *position)
     }
-    pub fn get(&self, index: usize) -> Option<Rc<Cell>> {
+    pub fn get(&self, index: usize) -> Option<Rc<RefCell<Cell>>> {
         self.cells.get(index).map(|rc| rc.clone())
     }
 
     pub fn positions(&self) -> Vec<Position> {
         self.cells
             .iter()
-            .map(|c| c.pos())
+            .map(|c| c.borrow().pos())
             .collect::<Vec<Position>>()
     }
 }
@@ -156,15 +161,18 @@ mod tests {
             }
             #[test]
             fn first_cell_position_is_1_1() {
-                assert_eq!(create_cells(&SETTING).cells[0].pos, Position(0, 0));
+                assert_eq!(create_cells(&SETTING).cells[0].borrow().pos, Position(0, 0));
             }
             #[test]
             fn second_cell_position_is_1_2() {
-                assert_eq!(create_cells(&SETTING).cells[1].pos, Position(0, 1));
+                assert_eq!(create_cells(&SETTING).cells[1].borrow().pos, Position(0, 1));
             }
             #[test]
             fn last_cell_position_is_6_6() {
-                assert_eq!(create_cells(&SETTING).cells[35].pos, Position(5, 5));
+                assert_eq!(
+                    create_cells(&SETTING).cells[35].borrow().pos,
+                    Position(5, 5)
+                );
             }
         }
     }
@@ -188,7 +196,7 @@ mod tests {
         }
         #[test]
         fn test_filter() {
-            let cells_by_col = create_cells(&SETTING).filter(|c| c.pos.col() == 2);
+            let cells_by_col = create_cells(&SETTING).filter(|c| c.borrow().pos.col() == 2);
             let cols = cells_by_col.positions();
             assert_eq!(
                 cols,
@@ -226,6 +234,7 @@ mod tests {
                     .find_by_position(&pos)
                     .unwrap()
                     .as_ref()
+                    .borrow()
                     .pos(),
                 pos
             );
@@ -237,7 +246,7 @@ mod tests {
         #[test]
         fn get_returns_some_cell() {
             assert_eq!(
-                create_cells(&SETTING).get(35).unwrap().pos(),
+                create_cells(&SETTING).get(35).unwrap().borrow().pos(),
                 Position(5, 5)
             );
         }
@@ -317,6 +326,22 @@ mod tests {
                 cell.set_answer(4);
                 assert_eq!(cell.answer_candidate, []);
             }
+        }
+        #[test]
+        fn has_answer_candidate_returns_true_when_candidate_not_exists() {
+            let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+            cell.remove_answer_candidate(&1);
+            cell.remove_answer_candidate(&3);
+            cell.remove_answer_candidate(&5);
+            assert_eq!(cell.has_answer_candidate(3), false);
+        }
+        #[test]
+        fn has_answer_candidate_returns_true_when_candidate_exists() {
+            let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+            cell.remove_answer_candidate(&1);
+            cell.remove_answer_candidate(&3);
+            cell.remove_answer_candidate(&5);
+            assert_eq!(cell.has_answer_candidate(2), true);
         }
     }
 }

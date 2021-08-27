@@ -1,5 +1,6 @@
 use crate::normal_game::cell;
 use crate::normal_game::setting;
+use std::cell::RefCell;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -14,11 +15,13 @@ impl Group {
     // /// If there is only one possible answer, confirm it.
     // pub fn fill_lonely(&self) {
     //     for candidate in self.unanswerd_candidate.iter() {
-    //         let asdf: cell::Cells = self.cells.filter(|rc_cell| true);
+    //         let asdf: cell::Cells = self
+    //             .cells
+    //             .filter(|c| c.borrow().answer_candidate.len() == 0);
     //         if asdf.len() == 1 {
     //             let a = asdf.get(0);
     //             let mut b = a.unwrap();
-    //             b.set_answer(0);
+    //             b.borrow_mut().set_answer(0);
     //             // asdf.get(0).unwrap().clone().set_answer(*candidate);
     //         }
     //     }
@@ -64,7 +67,7 @@ fn create_block_groups(cells: &cell::Cells, setting: &setting::GameSetting) -> V
     let block_start_positions = create_block_start_positions(setting);
     let mut vec: Vec<Rc<Group>> = vec![];
     for start_pos in block_start_positions {
-        let mut one_group_cells: Vec<Rc<cell::Cell>> = vec![];
+        let mut one_group_cells: Vec<Rc<RefCell<cell::Cell>>> = vec![];
         for row in (0..setting.block_height).collect::<Vec<u8>>() {
             for col in (0..setting.block_width).collect::<Vec<u8>>() {
                 let pos = start_pos.add_row(row).add_col(col);
@@ -115,10 +118,22 @@ mod tests {
         let vg = create_vertical_groups(&cell::create_cells(&setting), &setting);
         assert_eq!(vg.len(), 6);
         assert_eq!(vg[0].cells.len(), 6);
-        assert_eq!(vg[0].cells.get(0).unwrap().pos(), cell::Position::new(0, 0));
-        assert_eq!(vg[0].cells.get(5).unwrap().pos(), cell::Position::new(5, 0));
-        assert_eq!(vg[5].cells.get(0).unwrap().pos(), cell::Position::new(0, 5));
-        assert_eq!(vg[5].cells.get(5).unwrap().pos(), cell::Position::new(5, 5));
+        assert_eq!(
+            vg[0].cells.get(0).unwrap().borrow().pos(),
+            cell::Position::new(0, 0)
+        );
+        assert_eq!(
+            vg[0].cells.get(5).unwrap().borrow().pos(),
+            cell::Position::new(5, 0)
+        );
+        assert_eq!(
+            vg[5].cells.get(0).unwrap().borrow().pos(),
+            cell::Position::new(0, 5)
+        );
+        assert_eq!(
+            vg[5].cells.get(5).unwrap().borrow().pos(),
+            cell::Position::new(5, 5)
+        );
     }
     #[test]
     fn test_create_horizontal_groups() {
@@ -129,10 +144,22 @@ mod tests {
         let hg = create_horizontal_groups(&cell::create_cells(&setting), &setting);
         assert_eq!(hg.len(), 6);
         assert_eq!(hg[0].cells.len(), 6);
-        assert_eq!(hg[0].cells.get(0).unwrap().pos(), cell::Position::new(0, 0));
-        assert_eq!(hg[0].cells.get(5).unwrap().pos(), cell::Position::new(0, 5));
-        assert_eq!(hg[5].cells.get(0).unwrap().pos(), cell::Position::new(5, 0));
-        assert_eq!(hg[5].cells.get(5).unwrap().pos(), cell::Position::new(5, 5));
+        assert_eq!(
+            hg[0].cells.get(0).unwrap().borrow().pos(),
+            cell::Position::new(0, 0)
+        );
+        assert_eq!(
+            hg[0].cells.get(5).unwrap().borrow().pos(),
+            cell::Position::new(0, 5)
+        );
+        assert_eq!(
+            hg[5].cells.get(0).unwrap().borrow().pos(),
+            cell::Position::new(5, 0)
+        );
+        assert_eq!(
+            hg[5].cells.get(5).unwrap().borrow().pos(),
+            cell::Position::new(5, 5)
+        );
     }
     #[test]
     fn test_create_block_start_positions() {

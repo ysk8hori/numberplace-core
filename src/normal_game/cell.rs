@@ -21,8 +21,8 @@ impl Cell {
         self.pos
     }
     /// Deletes the specified candidate answer.
-    pub fn remove_answer_candidate(&mut self, target: &u8) {
-        if let Ok(index) = self.answer_candidate.binary_search(target) {
+    pub fn remove_answer_candidate(&mut self, target: u8) {
+        if let Ok(index) = self.answer_candidate.binary_search(&target) {
             self.answer_candidate.remove(index);
         }
     }
@@ -42,6 +42,10 @@ impl Cell {
 
     pub fn has_answer_candidate(&self, candidate: u8) -> bool {
         self.answer_candidate.iter().find(|a| **a == candidate) != None
+    }
+
+    pub fn answer(&self) -> Option<u8> {
+        self.answer
     }
 }
 
@@ -272,21 +276,21 @@ mod tests {
         fn cell_can_remove_answer_candidate() {
             let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
             assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
-            cell.remove_answer_candidate(&4);
+            cell.remove_answer_candidate(4);
             assert_eq!(cell.answer_candidate, [1, 2, 3, 5, 6]);
-            cell.remove_answer_candidate(&4);
+            cell.remove_answer_candidate(4);
             assert_eq!(cell.answer_candidate, [1, 2, 3, 5, 6]);
         }
         #[test]
         fn test_remove_all_candidate() {
             let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
             assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
-            cell.remove_answer_candidate(&1);
-            cell.remove_answer_candidate(&2);
-            cell.remove_answer_candidate(&3);
-            cell.remove_answer_candidate(&4);
-            cell.remove_answer_candidate(&5);
-            cell.remove_answer_candidate(&6);
+            cell.remove_answer_candidate(1);
+            cell.remove_answer_candidate(2);
+            cell.remove_answer_candidate(3);
+            cell.remove_answer_candidate(4);
+            cell.remove_answer_candidate(5);
+            cell.remove_answer_candidate(6);
             assert_eq!(cell.answer_candidate, []);
         }
         #[test]
@@ -294,11 +298,11 @@ mod tests {
             let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
             assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
             assert_eq!(cell.answer, None);
-            cell.remove_answer_candidate(&1);
-            cell.remove_answer_candidate(&2);
-            cell.remove_answer_candidate(&4);
-            cell.remove_answer_candidate(&5);
-            cell.remove_answer_candidate(&6);
+            cell.remove_answer_candidate(1);
+            cell.remove_answer_candidate(2);
+            cell.remove_answer_candidate(4);
+            cell.remove_answer_candidate(5);
+            cell.remove_answer_candidate(6);
             assert_eq!(cell.answer, None);
             cell.try_fill_own_answer();
             assert_eq!(cell.answer, Some(3));
@@ -310,11 +314,11 @@ mod tests {
             fn when_try_fill_own_answer() {
                 let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
                 assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
-                cell.remove_answer_candidate(&1);
-                cell.remove_answer_candidate(&2);
-                cell.remove_answer_candidate(&4);
-                cell.remove_answer_candidate(&5);
-                cell.remove_answer_candidate(&6);
+                cell.remove_answer_candidate(1);
+                cell.remove_answer_candidate(2);
+                cell.remove_answer_candidate(4);
+                cell.remove_answer_candidate(5);
+                cell.remove_answer_candidate(6);
                 cell.try_fill_own_answer();
                 assert_eq!(cell.answer_candidate, []);
             }
@@ -330,18 +334,27 @@ mod tests {
         #[test]
         fn has_answer_candidate_returns_true_when_candidate_not_exists() {
             let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
-            cell.remove_answer_candidate(&1);
-            cell.remove_answer_candidate(&3);
-            cell.remove_answer_candidate(&5);
+            cell.remove_answer_candidate(1);
+            cell.remove_answer_candidate(3);
+            cell.remove_answer_candidate(5);
             assert_eq!(cell.has_answer_candidate(3), false);
         }
         #[test]
         fn has_answer_candidate_returns_true_when_candidate_exists() {
             let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
-            cell.remove_answer_candidate(&1);
-            cell.remove_answer_candidate(&3);
-            cell.remove_answer_candidate(&5);
+            cell.remove_answer_candidate(1);
+            cell.remove_answer_candidate(3);
+            cell.remove_answer_candidate(5);
             assert_eq!(cell.has_answer_candidate(2), true);
+        }
+        mod test_answer {
+            use super::*;
+            #[test]
+            fn return_answer_if_answered() {
+                let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+                cell.set_answer(1);
+                assert_eq!(cell.answer(), Some(1));
+            }
         }
     }
 }

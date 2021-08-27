@@ -9,23 +9,18 @@ pub struct Group {
     unanswerd_candidate: Vec<u8>,
 }
 
-// }
-
 impl Group {
-    // /// If there is only one possible answer, confirm it.
-    // pub fn fill_lonely(&self) {
-    //     for candidate in self.unanswerd_candidate.iter() {
-    //         let asdf: cell::Cells = self
-    //             .cells
-    //             .filter(|c| c.borrow().answer_candidate.len() == 0);
-    //         if asdf.len() == 1 {
-    //             let a = asdf.get(0);
-    //             let mut b = a.unwrap();
-    //             b.borrow_mut().set_answer(0);
-    //             // asdf.get(0).unwrap().clone().set_answer(*candidate);
-    //         }
-    //     }
-    // }
+    /// If there is only one possible answer, confirm it.
+    pub fn fill_lonely(&self) {
+        for candidate in self.unanswerd_candidate.iter() {
+            let asdf: cell::Cells = self
+                .cells
+                .filter(|c| c.borrow().has_answer_candidate(*candidate));
+            if asdf.len() == 1 {
+                asdf.get(0).unwrap().borrow_mut().set_answer(*candidate);
+            }
+        }
+    }
 }
 
 pub fn create_groups(cells: &cell::Cells, setting: &setting::GameSetting) -> Vec<Rc<Group>> {
@@ -109,13 +104,13 @@ fn create_block_start_positions(setting: &setting::GameSetting) -> Vec<cell::Pos
 #[cfg(test)]
 mod tests {
     use super::*;
+    const SETTING: setting::GameSetting = setting::GameSetting {
+        block_height: 2,
+        block_width: 3,
+    };
     #[test]
     fn test_create_vertical_groups() {
-        let setting = setting::GameSetting {
-            block_height: 2,
-            block_width: 3,
-        };
-        let vg = create_vertical_groups(&cell::create_cells(&setting), &setting);
+        let vg = create_vertical_groups(&cell::create_cells(&SETTING), &SETTING);
         assert_eq!(vg.len(), 6);
         assert_eq!(vg[0].cells.len(), 6);
         assert_eq!(
@@ -137,11 +132,7 @@ mod tests {
     }
     #[test]
     fn test_create_horizontal_groups() {
-        let setting = setting::GameSetting {
-            block_height: 2,
-            block_width: 3,
-        };
-        let hg = create_horizontal_groups(&cell::create_cells(&setting), &setting);
+        let hg = create_horizontal_groups(&cell::create_cells(&SETTING), &SETTING);
         assert_eq!(hg.len(), 6);
         assert_eq!(hg[0].cells.len(), 6);
         assert_eq!(
@@ -161,52 +152,36 @@ mod tests {
             cell::Position::new(5, 5)
         );
     }
-    #[test]
-    fn test_create_block_start_positions() {
-        let setting = setting::GameSetting {
-            block_height: 2,
-            block_width: 3,
-        };
-        let block_start_positions = create_block_start_positions(&setting);
-        assert_eq!(
-            block_start_positions,
-            vec![
-                cell::Position::new(0, 0),
-                cell::Position::new(0, 3),
-                cell::Position::new(2, 0),
-                cell::Position::new(2, 3),
-                cell::Position::new(4, 0),
-                cell::Position::new(4, 3)
-            ]
-        )
-    }
     mod test_create_block_groups {
         use super::*;
         #[test]
+        fn test_create_block_start_positions() {
+            let block_start_positions = create_block_start_positions(&SETTING);
+            assert_eq!(
+                block_start_positions,
+                vec![
+                    cell::Position::new(0, 0),
+                    cell::Position::new(0, 3),
+                    cell::Position::new(2, 0),
+                    cell::Position::new(2, 3),
+                    cell::Position::new(4, 0),
+                    cell::Position::new(4, 3)
+                ]
+            )
+        }
+        #[test]
         fn block_group_count() {
-            let setting = setting::GameSetting {
-                block_height: 2,
-                block_width: 3,
-            };
-            let groups = create_block_groups(&cell::create_cells(&setting), &setting);
+            let groups = create_block_groups(&cell::create_cells(&SETTING), &SETTING);
             assert_eq!(groups.len(), 6);
         }
         #[test]
         fn block_group_cell_count() {
-            let setting = setting::GameSetting {
-                block_height: 2,
-                block_width: 3,
-            };
-            let groups = create_block_groups(&cell::create_cells(&setting), &setting);
+            let groups = create_block_groups(&cell::create_cells(&SETTING), &SETTING);
             assert!(groups.iter().all(|g| g.cells.len() == 6));
         }
         #[test]
         fn first_block_group_cells() {
-            let setting = setting::GameSetting {
-                block_height: 2,
-                block_width: 3,
-            };
-            let groups = create_block_groups(&cell::create_cells(&setting), &setting);
+            let groups = create_block_groups(&cell::create_cells(&SETTING), &SETTING);
             assert_eq!(
                 groups[0].cells.positions(),
                 vec![
@@ -221,11 +196,7 @@ mod tests {
         }
         #[test]
         fn last_block_group_cells() {
-            let setting = setting::GameSetting {
-                block_height: 2,
-                block_width: 3,
-            };
-            let groups = create_block_groups(&cell::create_cells(&setting), &setting);
+            let groups = create_block_groups(&cell::create_cells(&SETTING), &SETTING);
             assert_eq!(
                 groups[5].cells.positions(),
                 vec![
@@ -237,6 +208,41 @@ mod tests {
                     cell::Position::new(5, 5),
                 ]
             );
+        }
+    }
+    mod test_fill_lonely {
+        use super::*;
+        #[test]
+        fn fill_success_when_group_has_one_candidate() {
+            if let Some(group) = create_block_groups(&cell::create_cells(&SETTING), &SETTING).get(0)
+            {
+                for n in 1..=5 {
+                    group
+                        .cells
+                        .get(n)
+                        .unwrap()
+                        .borrow_mut()
+                        .remove_answer_candidate(1);
+                }
+                group.fill_lonely();
+                assert_eq!(group.cells.get(0).unwrap().borrow().answer(), Some(1));
+            }
+        }
+        #[test]
+        fn fill_not_success_when_group_has_some_candidate() {
+            if let Some(group) = create_block_groups(&cell::create_cells(&SETTING), &SETTING).get(0)
+            {
+                for n in 2..=5 {
+                    group
+                        .cells
+                        .get(n)
+                        .unwrap()
+                        .borrow_mut()
+                        .remove_answer_candidate(1);
+                }
+                group.fill_lonely();
+                assert_eq!(group.cells.get(0).unwrap().borrow().answer(), None);
+            }
         }
     }
 }

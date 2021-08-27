@@ -117,7 +117,7 @@ impl Cells {
     pub fn find_by_position(&self, position: &Position) -> Option<Rc<Cell>> {
         self.find(|rc_cell| rc_cell.pos() == *position)
     }
-    pub fn find_by_index(&self, index: usize) -> Option<Rc<Cell>> {
+    pub fn get(&self, index: usize) -> Option<Rc<Cell>> {
         self.cells.get(index).map(|rc| rc.clone())
     }
 
@@ -231,13 +231,13 @@ mod tests {
             );
         }
         #[test]
-        fn find_by_index_returns_none_when_outofbounds() {
-            assert_eq!(create_cells(&SETTING).find_by_index(36), None);
+        fn get_returns_none_when_outofbounds() {
+            assert_eq!(create_cells(&SETTING).get(36), None);
         }
         #[test]
-        fn find_by_index_returns_some_cell() {
+        fn get_returns_some_cell() {
             assert_eq!(
-                create_cells(&SETTING).find_by_index(35).unwrap().pos(),
+                create_cells(&SETTING).get(35).unwrap().pos(),
                 Position(5, 5)
             );
         }

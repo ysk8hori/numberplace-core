@@ -5,8 +5,7 @@ pub mod group;
 pub mod setting;
 
 pub struct NormalGame {
-    pub block_height: u8,
-    pub block_width: u8,
+    pub setting: setting::GameSetting,
     pub cells: cell::Cells,
     pub groups: Vec<Rc<group::Group>>,
 }
@@ -16,8 +15,7 @@ impl NormalGame {
         let cells = cell::create_cells(&setting);
         let groups = group::create_groups(&cells, &setting);
         NormalGame {
-            block_height: setting.block_height,
-            block_width: setting.block_width,
+            setting,
             cells,
             groups,
         }

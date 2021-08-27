@@ -118,11 +118,7 @@ impl Cells {
         self.find(|rc_cell| rc_cell.pos() == *position)
     }
     pub fn find_by_index(&self, index: usize) -> Option<Rc<Cell>> {
-        if self.cells.len() <= index {
-            None
-        } else {
-            Some(self.cells[index].clone())
-        }
+        self.cells.get(index).map(|rc| rc.clone())
     }
 
     pub fn positions(&self) -> Vec<Position> {
@@ -232,6 +228,17 @@ mod tests {
                     .as_ref()
                     .pos(),
                 pos
+            );
+        }
+        #[test]
+        fn find_by_index_returns_none_when_outofbounds() {
+            assert_eq!(create_cells(&SETTING).find_by_index(36), None);
+        }
+        #[test]
+        fn find_by_index_returns_some_cell() {
+            assert_eq!(
+                create_cells(&SETTING).find_by_index(35).unwrap().pos(),
+                Position(5, 5)
             );
         }
     }

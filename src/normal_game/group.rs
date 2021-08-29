@@ -35,11 +35,12 @@ pub fn create_groups(cells: &cell::Cells, setting: &setting::GameSetting) -> Vec
 }
 
 fn create_vertical_groups(cells: &cell::Cells, setting: &setting::GameSetting) -> Vec<Rc<Group>> {
-    let cols: Vec<u8> = (0..setting.side_size()).collect();
-    cols.iter()
-        .map(|n| {
+    let x_pos: Vec<u8> = (0..setting.side_size()).collect();
+    x_pos
+        .iter()
+        .map(|x| {
             Rc::new(Group {
-                cells: cells.filter_by_column(*n),
+                cells: cells.filter_by_x(*x),
                 unanswerd_candidate: setting.answer_candidate().clone(),
             })
         })
@@ -47,11 +48,12 @@ fn create_vertical_groups(cells: &cell::Cells, setting: &setting::GameSetting) -
 }
 
 fn create_horizontal_groups(cells: &cell::Cells, setting: &setting::GameSetting) -> Vec<Rc<Group>> {
-    let rows: Vec<u8> = (0..setting.side_size()).collect();
-    rows.iter()
-        .map(|n| {
+    let y_pos: Vec<u8> = (0..setting.side_size()).collect();
+    y_pos
+        .iter()
+        .map(|y| {
             Rc::new(Group {
-                cells: cells.filter_by_row(*n),
+                cells: cells.filter_by_y(*y),
                 unanswerd_candidate: setting.answer_candidate().clone(),
             })
         })
@@ -63,9 +65,9 @@ fn create_block_groups(cells: &cell::Cells, setting: &setting::GameSetting) -> V
     let mut vec: Vec<Rc<Group>> = vec![];
     for start_pos in block_start_positions {
         let mut one_group_cells: Vec<Rc<RefCell<cell::Cell>>> = vec![];
-        for row in (0..setting.block_height).collect::<Vec<u8>>() {
-            for col in (0..setting.block_width).collect::<Vec<u8>>() {
-                let pos = start_pos.add_row(row).add_col(col);
+        for y in (0..setting.block_height).collect::<Vec<u8>>() {
+            for x in (0..setting.block_width).collect::<Vec<u8>>() {
+                let pos = start_pos.move_y(y).move_x(x);
                 one_group_cells.push(cells.find_by_position(&pos).unwrap().clone());
             }
         }
@@ -79,22 +81,22 @@ fn create_block_groups(cells: &cell::Cells, setting: &setting::GameSetting) -> V
 
 fn create_block_start_positions(setting: &setting::GameSetting) -> Vec<cell::Position> {
     let side_num_list: Vec<u8> = (0..setting.side_size()).collect();
-    let block_start_rows: Vec<u8> = side_num_list
+    let block_start_y_list: Vec<u8> = side_num_list
         .iter()
         .filter(|n| *n % setting.block_height == 0)
         .map(|n| *n)
         .collect();
-    let block_start_cols: Vec<u8> = side_num_list
+    let block_start_x_list: Vec<u8> = side_num_list
         .iter()
         .filter(|n| *n % setting.block_width == 0)
         .map(|n| *n)
         .collect();
-    block_start_rows
+    block_start_y_list
         .iter()
-        .map(|row| {
-            block_start_cols
+        .map(|y| {
+            block_start_x_list
                 .iter()
-                .map(|col| cell::Position::new(*row, *col))
+                .map(|x| cell::Position::new(*x, *y))
                 .collect::<Vec<cell::Position>>()
         })
         .flatten()
@@ -119,11 +121,11 @@ mod tests {
         );
         assert_eq!(
             vg[0].cells.get(5).unwrap().borrow().pos(),
-            cell::Position::new(5, 0)
+            cell::Position::new(0, 5)
         );
         assert_eq!(
             vg[5].cells.get(0).unwrap().borrow().pos(),
-            cell::Position::new(0, 5)
+            cell::Position::new(5, 0)
         );
         assert_eq!(
             vg[5].cells.get(5).unwrap().borrow().pos(),
@@ -141,11 +143,11 @@ mod tests {
         );
         assert_eq!(
             hg[0].cells.get(5).unwrap().borrow().pos(),
-            cell::Position::new(0, 5)
+            cell::Position::new(5, 0)
         );
         assert_eq!(
             hg[5].cells.get(0).unwrap().borrow().pos(),
-            cell::Position::new(5, 0)
+            cell::Position::new(0, 5)
         );
         assert_eq!(
             hg[5].cells.get(5).unwrap().borrow().pos(),
@@ -161,11 +163,11 @@ mod tests {
                 block_start_positions,
                 vec![
                     cell::Position::new(0, 0),
-                    cell::Position::new(0, 3),
-                    cell::Position::new(2, 0),
-                    cell::Position::new(2, 3),
-                    cell::Position::new(4, 0),
-                    cell::Position::new(4, 3)
+                    cell::Position::new(3, 0),
+                    cell::Position::new(0, 2),
+                    cell::Position::new(3, 2),
+                    cell::Position::new(0, 4),
+                    cell::Position::new(3, 4)
                 ]
             )
         }
@@ -186,11 +188,11 @@ mod tests {
                 groups[0].cells.positions(),
                 vec![
                     cell::Position::new(0, 0),
-                    cell::Position::new(0, 1),
-                    cell::Position::new(0, 2),
                     cell::Position::new(1, 0),
+                    cell::Position::new(2, 0),
+                    cell::Position::new(0, 1),
                     cell::Position::new(1, 1),
-                    cell::Position::new(1, 2),
+                    cell::Position::new(2, 1),
                 ]
             );
         }
@@ -200,11 +202,11 @@ mod tests {
             assert_eq!(
                 groups[5].cells.positions(),
                 vec![
-                    cell::Position::new(4, 3),
+                    cell::Position::new(3, 4),
                     cell::Position::new(4, 4),
-                    cell::Position::new(4, 5),
-                    cell::Position::new(5, 3),
                     cell::Position::new(5, 4),
+                    cell::Position::new(3, 5),
+                    cell::Position::new(4, 5),
                     cell::Position::new(5, 5),
                 ]
             );

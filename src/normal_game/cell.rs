@@ -49,22 +49,23 @@ impl Cell {
     }
 }
 
+/// Position(x, y)
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Position(u8, u8);
 impl Position {
-    pub fn new(row: u8, col: u8) -> Position {
-        Position(row, col)
+    pub fn new(x: u8, y: u8) -> Position {
+        Position(x, y)
     }
-    pub fn row(&self) -> u8 {
+    pub fn x(&self) -> u8 {
         self.0
     }
-    pub fn col(&self) -> u8 {
+    pub fn y(&self) -> u8 {
         self.1
     }
-    pub fn add_row(&self, count: u8) -> Position {
+    pub fn move_x(&self, count: u8) -> Position {
         Position(self.0 + count, self.1)
     }
-    pub fn add_col(&self, count: u8) -> Position {
+    pub fn move_y(&self, count: u8) -> Position {
         Position(self.0, self.1 + count)
     }
 }
@@ -76,10 +77,10 @@ pub struct Cells {
 
 pub fn create_cells(setting: &setting::GameSetting) -> Cells {
     let mut cells = Vec::new();
-    for row in 0..setting.side_size() {
-        for col in 0..setting.side_size() {
+    for x in 0..setting.side_size() {
+        for y in 0..setting.side_size() {
             cells.push(Rc::new(RefCell::new(Cell::new(
-                Position(row, col),
+                Position(x, y),
                 setting.answer_candidate(),
             ))));
         }
@@ -108,11 +109,11 @@ impl Cells {
                 .collect(),
         }
     }
-    pub fn filter_by_row(&self, row: u8) -> Cells {
-        self.filter(|c| c.borrow().pos.row() == row)
+    pub fn filter_by_x(&self, x: u8) -> Cells {
+        self.filter(|c| c.borrow().pos.x() == x)
     }
-    pub fn filter_by_column(&self, column: u8) -> Cells {
-        self.filter(|c| c.borrow().pos.col() == column)
+    pub fn filter_by_y(&self, y: u8) -> Cells {
+        self.filter(|c| c.borrow().pos.y() == y)
     }
     pub fn find<P>(&self, predicate: P) -> Option<Rc<RefCell<Cell>>>
     where
@@ -164,18 +165,36 @@ mod tests {
                 assert_eq!(create_cells(&SETTING).len(), 36)
             }
             #[test]
-            fn first_cell_position_is_1_1() {
+            fn first_cell_position_is_0_0() {
                 assert_eq!(create_cells(&SETTING).cells[0].borrow().pos, Position(0, 0));
             }
             #[test]
-            fn second_cell_position_is_1_2() {
+            fn second_cell_position_is_0_1() {
                 assert_eq!(create_cells(&SETTING).cells[1].borrow().pos, Position(0, 1));
             }
             #[test]
-            fn last_cell_position_is_6_6() {
+            fn last_cell_position_is_5_5() {
                 assert_eq!(
                     create_cells(&SETTING).cells[35].borrow().pos,
                     Position(5, 5)
+                );
+            }
+        }
+        mod given_3_3 {
+            use super::*;
+            const SETTING: setting::GameSetting = setting::GameSetting {
+                block_height: 3,
+                block_width: 3,
+            };
+            #[test]
+            fn returns_81_cells() {
+                assert_eq!(create_cells(&SETTING).len(), 81)
+            }
+            #[test]
+            fn last_cell_position_is_8_8() {
+                assert_eq!(
+                    create_cells(&SETTING).cells[80].borrow().pos,
+                    Position(8, 8)
                 );
             }
         }
@@ -183,11 +202,11 @@ mod tests {
     mod cells {
         use super::*;
         #[test]
-        fn test_filter_by_row() {
-            let cells_by_row = create_cells(&SETTING).filter_by_row(2);
-            let rows = cells_by_row.positions();
+        fn test_filter_by_x() {
+            let vertical_line = create_cells(&SETTING).filter_by_x(2);
+            let vertical_line_pos = vertical_line.positions();
             assert_eq!(
-                rows,
+                vertical_line_pos,
                 [
                     Position(2, 0),
                     Position(2, 1),
@@ -200,10 +219,9 @@ mod tests {
         }
         #[test]
         fn test_filter() {
-            let cells_by_col = create_cells(&SETTING).filter(|c| c.borrow().pos.col() == 2);
-            let cols = cells_by_col.positions();
+            let horizontal_line = create_cells(&SETTING).filter(|c| c.borrow().pos.y() == 2);
             assert_eq!(
-                cols,
+                horizontal_line.positions(),
                 [
                     Position(0, 2),
                     Position(1, 2),
@@ -215,11 +233,11 @@ mod tests {
             )
         }
         #[test]
-        fn test_filter_by_column() {
-            let cells_by_col = create_cells(&SETTING).filter_by_column(2);
-            let cols = cells_by_col.positions();
+        fn test_filter_by_y() {
+            let horizontal_line = create_cells(&SETTING).filter_by_y(2);
+            let horizontal_line_pos = horizontal_line.positions();
             assert_eq!(
-                cols,
+                horizontal_line_pos,
                 [
                     Position(0, 2),
                     Position(1, 2),
@@ -262,12 +280,12 @@ mod tests {
             assert_eq!(Position::new(1, 2), Position::new(1, 2));
         }
         #[test]
-        fn test_add_row() {
-            assert_eq!(Position::new(1, 2).add_row(3), Position::new(4, 2))
+        fn test_move_x() {
+            assert_eq!(Position::new(1, 2).move_x(3), Position::new(4, 2))
         }
         #[test]
-        fn test_add_col() {
-            assert_eq!(Position::new(1, 2).add_col(3), Position::new(1, 5))
+        fn test_move_y() {
+            assert_eq!(Position::new(1, 2).move_y(3), Position::new(1, 5))
         }
     }
     mod test_cell_utilities {

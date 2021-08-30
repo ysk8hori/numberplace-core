@@ -8,6 +8,7 @@ pub struct NormalGame {
     pub setting: setting::GameSetting,
     pub cells: cell::Cells,
     pub groups: Vec<Rc<group::Group>>,
+    status: GameState,
 }
 
 impl NormalGame {
@@ -18,11 +19,11 @@ impl NormalGame {
             setting,
             cells,
             groups,
+            status: GameState::Empty,
         }
     }
     /// ' 7     6 |6   1   3|  54 87  |  8   4  | 1  3  5 |  9   1  |  35 12  |7   2   8| 5     9 '
-    fn load(issue: &str, setting: setting::GameSetting) -> NormalGame {
-        let game = NormalGame::new(setting);
+    pub fn load(&mut self, issue: &str) {
         let answer_columns: Vec<&str> = issue.split("|").collect();
         for (y, horizontal_line) in answer_columns.iter().enumerate() {
             let chars: Vec<char> = horizontal_line.chars().collect();
@@ -31,84 +32,82 @@ impl NormalGame {
                     continue;
                 }
                 let answer: u8 = String::from(*answer).parse().expect("issue is wrong.");
-                game.cells
+                self.cells
                     .find_by_position(&cell::Position::new(x as u8, y as u8))
                     .unwrap()
                     .borrow_mut()
                     .set_answer(answer);
             }
         }
-        game
+        self.status = GameState::Loaded;
     }
+}
+
+pub enum GameState {
+    Empty,
+    Loaded,
+    Complete,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const SETTING: setting::GameSetting = setting::GameSetting {
+        block_height: 2,
+        block_width: 3,
+    };
+
     #[cfg(test)]
     mod _2_3 {
         use super::*;
 
         #[test]
         fn it_answer_candidate_is_1_to_6() {
-            let game = setting::GameSetting {
-                block_height: 2,
-                block_width: 3,
-            };
-            assert_eq!(game.answer_candidate(), vec![1, 2, 3, 4, 5, 6]);
+            assert_eq!(SETTING.answer_candidate(), vec![1, 2, 3, 4, 5, 6]);
         }
         #[test]
         fn it_has_36_cells() {
-            let game = NormalGame::new(setting::GameSetting {
-                block_height: 2,
-                block_width: 3,
-            });
+            let game = NormalGame::new(SETTING);
             assert_eq!(game.cells.len(), 36);
         }
         #[test]
         fn it_has_18_groups() {
-            let game = NormalGame::new(setting::GameSetting {
-                block_height: 2,
-                block_width: 3,
-            });
+            let game = NormalGame::new(SETTING);
             assert_eq!(game.groups.len(), 18);
         }
     }
     mod _3_3 {
         use super::*;
+        const SETTING: setting::GameSetting = setting::GameSetting {
+            block_height: 3,
+            block_width: 3,
+        };
 
         #[test]
         fn it_answer_candidate_is_1_to_9() {
-            let game = setting::GameSetting {
-                block_height: 3,
-                block_width: 3,
-            };
-            assert_eq!(game.answer_candidate(), vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
+            assert_eq!(SETTING.answer_candidate(), vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
         }
         #[test]
         fn it_has_81_cells() {
-            let game = NormalGame::new(setting::GameSetting {
-                block_height: 3,
-                block_width: 3,
-            });
+            let game = NormalGame::new(SETTING);
             assert_eq!(game.cells.len(), 81);
         }
         #[test]
         fn it_has_27_groups() {
-            let game = NormalGame::new(setting::GameSetting {
-                block_height: 3,
-                block_width: 3,
-            });
+            let game = NormalGame::new(SETTING);
             assert_eq!(game.groups.len(), 27);
         }
     }
     mod test_load {
         use super::*;
         fn game() -> NormalGame {
-            NormalGame::load(" 7     6 |6   1   3|  54 87  |  8   4  | 1  3  5 |  9   1  |  35 12  |7   2   8| 5     9 ", setting::GameSetting {
+            let mut game = NormalGame::new(setting::GameSetting {
                 block_height: 3,
                 block_width: 3,
-            })
+            });
+            game.load(" 7     6 |6   1   3|  54 87  |  8   4  | 1  3  5 |  9   1  |  35 12  |7   2   8| 5     9 ");
+            game
         }
         mod load_9_9 {
             use super::*;

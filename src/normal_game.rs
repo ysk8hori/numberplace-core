@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::rc::Rc;
 
 pub mod cell;
@@ -7,7 +8,7 @@ pub mod setting;
 pub struct NormalGame {
     pub setting: setting::GameSetting,
     pub cells: cell::Cells,
-    pub groups: Vec<Rc<group::Group>>,
+    pub groups: Vec<Rc<RefCell<group::Group>>>,
     status: GameState,
 }
 
@@ -40,6 +41,10 @@ impl NormalGame {
             }
         }
         self.status = GameState::Loaded;
+    }
+
+    pub fn solve(&mut self) {
+        // Group
     }
 }
 

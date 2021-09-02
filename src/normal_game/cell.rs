@@ -137,6 +137,12 @@ impl Cells {
             .map(|c| c.borrow().pos())
             .collect::<Vec<Position>>()
     }
+
+    pub fn on_answered(&self, answer: u8) {
+        for cell in self.cells.iter() {
+            cell.borrow_mut().remove_answer_candidate(answer);
+        }
+    }
 }
 
 #[cfg(test)]

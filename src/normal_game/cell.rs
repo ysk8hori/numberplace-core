@@ -1,12 +1,14 @@
 use crate::normal_game::setting;
+// use std::boxed::Box;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-#[derive(Debug, PartialEq)]
+// #[derive(Debug, PartialEq)]
 pub struct Cell {
     pos: Position,
     answer_candidate: Vec<u8>,
     answer: Option<u8>,
+    on_answered_callback: Vec<Box<dyn Fn(u8)>>,
 }
 
 impl Cell {
@@ -15,6 +17,7 @@ impl Cell {
             pos: position,
             answer_candidate,
             answer: None,
+            on_answered_callback: vec![],
         }
     }
     pub fn pos(&self) -> Position {
@@ -38,6 +41,9 @@ impl Cell {
     pub fn set_answer(&mut self, answer: u8) {
         self.answer = Some(answer);
         self.answer_candidate.clear();
+        for cb in self.on_answered_callback.iter() {
+            cb(answer);
+        }
     }
 
     pub fn has_answer_candidate(&self, candidate: u8) -> bool {
@@ -46,6 +52,10 @@ impl Cell {
 
     pub fn answer(&self) -> Option<u8> {
         self.answer
+    }
+
+    pub fn register_on_answered_callback(&mut self, cb: Box<dyn Fn(u8)>) {
+        self.on_answered_callback.push(cb);
     }
 }
 
@@ -70,7 +80,7 @@ impl Position {
     }
 }
 
-#[derive(Debug)]
+// #[derive(Debug)]
 pub struct Cells {
     cells: Vec<Rc<RefCell<Cell>>>,
 }
@@ -268,8 +278,9 @@ mod tests {
             );
         }
         #[test]
+        #[should_panic]
         fn get_returns_none_when_outofbounds() {
-            assert_eq!(create_cells(&SETTING).get(36), None);
+            create_cells(&SETTING).get(36).unwrap();
         }
         #[test]
         fn get_returns_some_cell() {
@@ -379,6 +390,15 @@ mod tests {
                 cell.set_answer(1);
                 assert_eq!(cell.answer(), Some(1));
             }
+        }
+    }
+    mod on_answered_callback {
+        use super::*;
+        #[test]
+        fn callback_on_answered() {
+            let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+            cell.register_on_answered_callback(Box::new(|answer| assert_eq!(answer, 1)));
+            cell.set_answer(1);
         }
     }
 }

@@ -3,7 +3,7 @@ use crate::normal_game::setting;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-#[derive(Debug)]
+// #[derive(Debug)]
 pub struct Group {
     pub cells: cell::Cells,
     unanswerd_candidate: Vec<u8>,
@@ -304,17 +304,16 @@ mod tests {
             };
         }
         #[test]
+        #[should_panic]
         fn remove_answer_from_own_cells_unanswered_candidate() {
             match create_block_groups(&cell::create_cells(&SETTING), &SETTING).get(0) {
                 Some(group) => {
                     group.borrow_mut().on_answered(1);
-                    assert_eq!(
-                        group
-                            .borrow()
-                            .cells
-                            .find(|c| c.borrow().has_answer_candidate(1)),
-                        None
-                    );
+                    group
+                        .borrow()
+                        .cells
+                        .find(|c| c.borrow().has_answer_candidate(1))
+                        .unwrap();
                 }
                 None => panic!(),
             };

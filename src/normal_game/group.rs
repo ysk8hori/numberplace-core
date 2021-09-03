@@ -5,35 +5,25 @@ use std::rc::Rc;
 
 // #[derive(Debug)]
 pub struct Group {
-    pub cells: cell::Cells,
+    pub cells: Vec<Rc<RefCell<cell::Cell>>>,
     unanswerd_candidate: Vec<u8>,
 }
 
 impl Group {
-    /// If there is only one possible answer, confirm it.
-    pub fn fill_lonely(&self) {
-        for candidate in self.unanswerd_candidate.iter() {
-            let asdf: cell::Cells = self
-                .cells
-                .filter(|c| c.borrow().has_answer_candidate(*candidate));
-            if asdf.len() == 1 {
-                asdf.get(0).unwrap().borrow_mut().set_answer(*candidate);
-            }
-        }
-    }
-
-    /// The process in the Group to be executed when the answer is filled in the Cell owned by the Group.
-    /// It removes the filled-in answer from its own unanswered_candidate and also removes the filled-in answer from the answer_candidate of all the cells owned by it.
-    ///
-    /// そのGroupが保有するCellに答えが記入された際に実行するGroupでの処理。
-    /// 自分自身の unanswered_candidate から記入された答えを除去し、自分自身が保有するCell全ての answer_candidate からも記入された答えを除去する。
-    pub fn on_answered(&mut self, answer: u8) {
-        self.cells.on_answered(answer);
-        self.remove_unanswerd_candidate(answer);
-    }
+    // /// If there is only one possible answer, confirm it.
+    // pub fn fill_lonely(&self) {
+    //     for candidate in self.unanswerd_candidate.iter() {
+    //         let asdf: Vec<Rc<RefCell<cell::Cell>>> = self
+    //             .cells
+    //             .filter(|c| c.borrow().has_answer_candidate(*candidate));
+    //         if asdf.len() == 1 {
+    //             asdf.get(0).unwrap().borrow_mut().set_answer(*candidate);
+    //         }
+    //     }
+    // }
 
     /// Remove the specified answer from the unanswerd_candidate.
-    fn remove_unanswerd_candidate(&mut self, answer: u8) {
+    pub fn remove_unanswerd_candidate(&mut self, answer: u8) {
         self.unanswerd_candidate = self
             .unanswerd_candidate
             .iter()
@@ -44,7 +34,7 @@ impl Group {
 }
 
 pub fn create_groups(
-    cells: &cell::Cells,
+    cells: &Vec<Rc<RefCell<cell::Cell>>>,
     setting: &setting::GameSetting,
 ) -> Vec<Rc<RefCell<Group>>> {
     let vg = create_vertical_groups(&cells, &setting);
@@ -58,7 +48,7 @@ pub fn create_groups(
 }
 
 fn create_vertical_groups(
-    cells: &cell::Cells,
+    cells: &Vec<Rc<RefCell<cell::Cell>>>,
     setting: &setting::GameSetting,
 ) -> Vec<Rc<RefCell<Group>>> {
     let x_pos: Vec<u8> = (0..setting.side_size()).collect();
@@ -66,7 +56,11 @@ fn create_vertical_groups(
         .iter()
         .map(|x| {
             Rc::new(RefCell::new(Group {
-                cells: cells.filter_by_x(*x),
+                cells: cells
+                    .iter()
+                    .filter(|c| c.borrow().pos().x() == *x)
+                    .map(|c| c.clone())
+                    .collect(),
                 unanswerd_candidate: setting.answer_candidate().clone(),
             }))
         })
@@ -74,7 +68,7 @@ fn create_vertical_groups(
 }
 
 fn create_horizontal_groups(
-    cells: &cell::Cells,
+    cells: &Vec<Rc<RefCell<cell::Cell>>>,
     setting: &setting::GameSetting,
 ) -> Vec<Rc<RefCell<Group>>> {
     let y_pos: Vec<u8> = (0..setting.side_size()).collect();
@@ -82,7 +76,11 @@ fn create_horizontal_groups(
         .iter()
         .map(|y| {
             Rc::new(RefCell::new(Group {
-                cells: cells.filter_by_y(*y),
+                cells: cells
+                    .iter()
+                    .filter(|c| c.borrow().pos().y() == *y)
+                    .map(|c| c.clone())
+                    .collect(),
                 unanswerd_candidate: setting.answer_candidate().clone(),
             }))
         })
@@ -90,7 +88,7 @@ fn create_horizontal_groups(
 }
 
 fn create_block_groups(
-    cells: &cell::Cells,
+    cells: &Vec<Rc<RefCell<cell::Cell>>>,
     setting: &setting::GameSetting,
 ) -> Vec<Rc<RefCell<Group>>> {
     let block_start_positions = create_block_start_positions(setting);
@@ -100,11 +98,17 @@ fn create_block_groups(
         for y in (0..setting.block_height).collect::<Vec<u8>>() {
             for x in (0..setting.block_width).collect::<Vec<u8>>() {
                 let pos = start_pos.move_y(y).move_x(x);
-                one_group_cells.push(cells.find_by_position(&pos).unwrap().clone());
+                one_group_cells.push(
+                    cells
+                        .iter()
+                        .find(|c| c.borrow().pos() == pos)
+                        .unwrap()
+                        .clone(),
+                );
             }
         }
         vec.push(Rc::new(RefCell::new(Group {
-            cells: cell::Cells::new(one_group_cells),
+            cells: one_group_cells,
             unanswerd_candidate: setting.answer_candidate().clone(),
         })))
     }
@@ -217,7 +221,12 @@ mod tests {
         fn first_block_group_cells() {
             let groups = create_block_groups(&cell::create_cells(&SETTING), &SETTING);
             assert_eq!(
-                groups[0].borrow().cells.positions(),
+                groups[0]
+                    .borrow()
+                    .cells
+                    .iter()
+                    .map(|c| c.borrow().pos())
+                    .collect::<Vec<cell::Position>>(),
                 vec![
                     cell::Position::new(0, 0),
                     cell::Position::new(1, 0),
@@ -232,7 +241,12 @@ mod tests {
         fn last_block_group_cells() {
             let groups = create_block_groups(&cell::create_cells(&SETTING), &SETTING);
             assert_eq!(
-                groups[5].borrow().cells.positions(),
+                groups[5]
+                    .borrow()
+                    .cells
+                    .iter()
+                    .map(|c| c.borrow().pos())
+                    .collect::<Vec<cell::Position>>(),
                 vec![
                     cell::Position::new(3, 4),
                     cell::Position::new(4, 4),
@@ -242,81 +256,6 @@ mod tests {
                     cell::Position::new(5, 5),
                 ]
             );
-        }
-    }
-    mod test_fill_lonely {
-        use super::*;
-        #[test]
-        fn fill_success_when_group_has_one_candidate() {
-            match create_block_groups(&cell::create_cells(&SETTING), &SETTING).get(0) {
-                Some(group) => {
-                    for n in 1..=5 {
-                        group
-                            .borrow()
-                            .cells
-                            .get(n)
-                            .unwrap()
-                            .borrow_mut()
-                            .remove_answer_candidate(1);
-                    }
-                    group.borrow().fill_lonely();
-                    assert_eq!(
-                        group.borrow().cells.get(0).unwrap().borrow().answer(),
-                        Some(1)
-                    );
-                }
-                None => panic!(),
-            };
-        }
-        #[test]
-        fn fill_not_success_when_group_has_some_candidate() {
-            match create_block_groups(&cell::create_cells(&SETTING), &SETTING).get(0) {
-                Some(group) => {
-                    for n in 2..=5 {
-                        group
-                            .borrow()
-                            .cells
-                            .get(n)
-                            .unwrap()
-                            .borrow_mut()
-                            .remove_answer_candidate(1);
-                    }
-                    group.borrow().fill_lonely();
-                    assert_eq!(group.borrow().cells.get(0).unwrap().borrow().answer(), None);
-                }
-                None => panic!(),
-            }
-        }
-    }
-    mod test_on_answered {
-        use super::*;
-        #[test]
-        fn remove_answer_from_own_unanswered_candidate() {
-            match create_block_groups(&cell::create_cells(&SETTING), &SETTING).get(0) {
-                Some(group) => {
-                    group.borrow_mut().on_answered(1);
-                    assert_eq!(
-                        group.borrow().unanswerd_candidate.iter().find(|n| **n == 1),
-                        None
-                    );
-                }
-                None => panic!(),
-            };
-        }
-        #[test]
-        #[should_panic]
-        fn remove_answer_from_own_cells_unanswered_candidate() {
-            match create_block_groups(&cell::create_cells(&SETTING), &SETTING).get(0) {
-                Some(group) => {
-                    group.borrow_mut().on_answered(1);
-                    group
-                        .borrow()
-                        .cells
-                        .find(|c| c.borrow().has_answer_candidate(1))
-                        .unwrap();
-                }
-                None => panic!(),
-            };
         }
     }
 }

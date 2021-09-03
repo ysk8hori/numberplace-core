@@ -7,7 +7,7 @@ pub mod setting;
 
 pub struct NormalGame {
     pub setting: setting::GameSetting,
-    pub cells: cell::Cells,
+    pub cells: Vec<Rc<RefCell<cell::Cell>>>,
     pub groups: Vec<Rc<RefCell<group::Group>>>,
     status: GameState,
 }
@@ -34,17 +34,15 @@ impl NormalGame {
                 }
                 let answer: u8 = String::from(*answer).parse().expect("issue is wrong.");
                 self.cells
-                    .find_by_position(&cell::Position::new(x as u8, y as u8))
+                    .iter()
+                    .find(|c| c.borrow().pos() == cell::Position::new(x as u8, y as u8))
+                    // .find_by_position(&cell::Position::new(x as u8, y as u8))
                     .unwrap()
                     .borrow_mut()
                     .set_answer(answer);
             }
         }
         self.status = GameState::Loaded;
-    }
-
-    pub fn solve(&mut self) {
-        // Group
     }
 }
 
@@ -126,7 +124,9 @@ mod tests {
                 assert_eq!(
                     game()
                         .cells
-                        .find_by_position(&cell::Position::new(0, 0))
+                        .iter()
+                        .find(|c| c.borrow().pos() == cell::Position::new(0, 0))
+                        // .find_by_position(&cell::Position::new(0, 0))
                         .unwrap()
                         .borrow()
                         .answer(),
@@ -138,7 +138,9 @@ mod tests {
                 assert_eq!(
                     game()
                         .cells
-                        .find_by_position(&cell::Position::new(1, 0))
+                        .iter()
+                        .find(|c| c.borrow().pos() == cell::Position::new(1, 0))
+                        // .find_by_position(&cell::Position::new(1, 0))
                         .unwrap()
                         .borrow()
                         .answer(),
@@ -150,7 +152,9 @@ mod tests {
                 assert_eq!(
                     game()
                         .cells
-                        .find_by_position(&cell::Position::new(2, 0))
+                        .iter()
+                        .find(|c| c.borrow().pos() == cell::Position::new(2, 0))
+                        // .find_by_position(&cell::Position::new(2, 0))
                         .unwrap()
                         .borrow()
                         .answer(),
@@ -162,7 +166,9 @@ mod tests {
                 assert_eq!(
                     game()
                         .cells
-                        .find_by_position(&cell::Position::new(7, 0))
+                        .iter()
+                        .find(|c| c.borrow().pos() == cell::Position::new(7, 0))
+                        // .find_by_position(&cell::Position::new(7, 0))
                         .unwrap()
                         .borrow()
                         .answer(),

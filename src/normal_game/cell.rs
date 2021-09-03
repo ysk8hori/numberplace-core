@@ -3,12 +3,14 @@ use crate::normal_game::setting;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+type Callback = fn(u8);
+
 // #[derive(Debug, PartialEq)]
 pub struct Cell {
     pos: Position,
     answer_candidate: Vec<u8>,
     answer: Option<u8>,
-    on_answered_callback: Vec<Box<dyn Fn(u8)>>,
+    on_answered_callback: Vec<Callback>,
 }
 
 impl Cell {
@@ -54,7 +56,7 @@ impl Cell {
         self.answer
     }
 
-    pub fn register_on_answered_callback(&mut self, cb: Box<dyn Fn(u8)>) {
+    pub fn register_on_answered_callback(&mut self, cb: Callback) {
         self.on_answered_callback.push(cb);
     }
 }
@@ -152,6 +154,12 @@ impl Cells {
         for cell in self.cells.iter() {
             cell.borrow_mut().remove_answer_candidate(answer);
         }
+    }
+
+    pub fn register_callback(&self, cb: Callback) {
+        self.cells
+            .iter()
+            .for_each(|c| c.borrow_mut().register_on_answered_callback(cb));
     }
 }
 
@@ -289,6 +297,15 @@ mod tests {
                 Position(5, 5)
             );
         }
+        #[test]
+        fn register_callback_can_register_all_cells() {
+            let cells = create_cells(&SETTING);
+            fn callback(answer: u8) {
+                assert_eq!(answer, 1);
+            }
+            cells.register_callback(callback);
+            cells.get(0).unwrap().borrow_mut().set_answer(1);
+        }
     }
     mod test_position {
         use super::*;
@@ -396,8 +413,11 @@ mod tests {
         use super::*;
         #[test]
         fn callback_on_answered() {
+            fn simple_callback(answer: u8) {
+                assert_eq!(answer, 1);
+            }
             let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
-            cell.register_on_answered_callback(Box::new(|answer| assert_eq!(answer, 1)));
+            cell.register_on_answered_callback(simple_callback);
             cell.set_answer(1);
         }
     }

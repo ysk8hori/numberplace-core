@@ -65,6 +65,14 @@ impl NormalGame {
             .unwrap()
             .borrow_mut()
             .set_answer(answer);
+        self.groups()
+            .iter()
+            .filter(|g| g.borrow().cells().iter().any(|c| c.borrow().pos() == pos))
+            .for_each(|g| g.borrow_mut().remove_answer_candidate(answer));
+    }
+
+    pub fn find_cell(&self, pos: cell::Position) -> Option<&Rc<RefCell<cell::Cell>>> {
+        self.cells.iter().find(|c| c.borrow().pos() == pos)
     }
 }
 
@@ -208,7 +216,7 @@ mod tests {
             assert_eq!(game.cells()[0].borrow().answer(), Some(2));
         }
         #[test]
-        fn test2() {
+        fn remove_unanswerd_candidate_from_groups() {
             let game = NormalGame::new(SETTING);
             game.set_answer(cell::Position::new(0, 0), 2);
             assert_eq!(game.cells()[1].borrow().has_answer_candidate(2), false);

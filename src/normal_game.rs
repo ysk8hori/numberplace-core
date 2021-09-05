@@ -6,9 +6,9 @@ pub mod group;
 pub mod setting;
 
 pub struct NormalGame {
-    pub setting: setting::GameSetting,
-    pub cells: Vec<Rc<RefCell<cell::Cell>>>,
-    pub groups: Vec<Rc<RefCell<group::Group>>>,
+    setting: setting::GameSetting,
+    cells: Vec<Rc<RefCell<cell::Cell>>>,
+    groups: Vec<Rc<RefCell<group::Group>>>,
     status: GameState,
 }
 
@@ -22,6 +22,19 @@ impl NormalGame {
             groups,
             status: GameState::Empty,
         }
+    }
+
+    pub fn setting(&self) -> &setting::GameSetting {
+        &self.setting
+    }
+    pub fn cells(&self) -> &Vec<Rc<RefCell<cell::Cell>>> {
+        &self.cells
+    }
+    pub fn groups(&self) -> &Vec<Rc<RefCell<group::Group>>> {
+        &self.groups
+    }
+    pub fn status(&self) -> &GameState {
+        &self.status
     }
     /// ' 7     6 |6   1   3|  54 87  |  8   4  | 1  3  5 |  9   1  |  35 12  |7   2   8| 5     9 '
     pub fn load(&mut self, issue: &str) {

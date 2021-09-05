@@ -10,6 +10,10 @@ pub struct Group {
 }
 
 impl Group {
+    pub fn cells(&self) -> &Vec<Rc<RefCell<cell::Cell>>> {
+        &self.cells
+    }
+
     /// Get lonely, in the Group.
     ///
     /// Returns the answer_candidate and the position of the cell that is held by only one of the cells that belong to the group.

@@ -31,13 +31,14 @@ impl Cell {
             self.answer_candidate.remove(index);
         }
     }
-    /// Cell to confirm the answer when there is only one candidate left.
-    pub fn try_fill_own_answer(&mut self) {
+    /// Cell to confirm the answer when there is only one candidate left, and return the answer.
+    pub fn try_fill_own_answer(&mut self) -> Option<u8> {
         if self.answer_candidate.len() == 1 {
             self.answer = Some(self.answer_candidate[0]);
             self.answer_candidate.clear();
+            return self.answer;
         }
-        return;
+        return None;
     }
     /// Fill in the Cell with your answer and clear the answer suggestions.
     pub fn set_answer(&mut self, answer: u8) {
@@ -183,25 +184,26 @@ mod tests {
             cell.remove_answer_candidate(6);
             assert_eq!(cell.answer_candidate, []);
         }
-        #[test]
-        fn test_try_fill_own_answer() {
-            let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
-            assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
-            assert_eq!(cell.answer, None);
-            cell.remove_answer_candidate(1);
-            cell.remove_answer_candidate(2);
-            cell.remove_answer_candidate(4);
-            cell.remove_answer_candidate(5);
-            cell.remove_answer_candidate(6);
-            assert_eq!(cell.answer, None);
-            cell.try_fill_own_answer();
-            assert_eq!(cell.answer, Some(3));
-            assert_eq!(cell.answer_candidate, []);
-        }
-        mod cell_clear_candidate_when_setted_answer {
+        mod try_fill_own_answer {
             use super::*;
+
             #[test]
-            fn when_try_fill_own_answer() {
+            fn test_try_fill_own_answer() {
+                let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+                assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
+                assert_eq!(cell.answer, None);
+                cell.remove_answer_candidate(1);
+                cell.remove_answer_candidate(2);
+                cell.remove_answer_candidate(4);
+                cell.remove_answer_candidate(5);
+                cell.remove_answer_candidate(6);
+                assert_eq!(cell.answer, None);
+                cell.try_fill_own_answer();
+                assert_eq!(cell.answer, Some(3));
+                assert_eq!(cell.answer_candidate, []);
+            }
+            #[test]
+            fn clear_candidate_when_setted_answer() {
                 let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
                 assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
                 cell.remove_answer_candidate(1);
@@ -212,9 +214,11 @@ mod tests {
                 cell.try_fill_own_answer();
                 assert_eq!(cell.answer_candidate, []);
             }
-
+        }
+        mod set_answer {
+            use super::*;
             #[test]
-            fn when_setted_answer() {
+            fn clear_candidate() {
                 let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
                 assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
                 cell.set_answer(4);

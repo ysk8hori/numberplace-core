@@ -35,8 +35,8 @@ impl NormalGame {
     pub fn groups(&self) -> &Vec<Rc<RefCell<group::Group>>> {
         &self.groups
     }
-    pub fn status(&self) -> &GameState {
-        &self.status
+    pub fn status(&self) -> GameState {
+        self.status
     }
     pub fn answered_counter(&self) -> u8 {
         self.answered_counter
@@ -51,25 +51,22 @@ impl NormalGame {
                     continue;
                 }
                 let answer: u8 = String::from(*answer).parse().expect("issue is wrong.");
-                self.cells
-                    .iter()
-                    .find(|c| c.borrow().pos() == cell::Position::new(x as u8, y as u8))
-                    // .find_by_position(&cell::Position::new(x as u8, y as u8))
-                    .unwrap()
-                    .borrow_mut()
-                    .set_answer(answer);
+                self.set_answer(cell::Position::new(x as u8, y as u8), answer);
             }
         }
         self.status = GameState::Loaded;
     }
 
     pub fn set_answer(&mut self, pos: cell::Position, answer: u8) {
-        self.cells()
+        let cell = self
+            .cells()
             .iter()
             .find(|c| c.borrow().pos() == pos)
-            .unwrap()
-            .borrow_mut()
-            .set_answer(answer);
+            .unwrap();
+        if cell.borrow().answer() != None {
+            return;
+        }
+        cell.borrow_mut().set_answer(answer);
         self.groups()
             .iter()
             .filter(|g| g.borrow().cells().iter().any(|c| c.borrow().pos() == pos))
@@ -79,7 +76,7 @@ impl NormalGame {
 
     fn count_up(&mut self) {
         self.answered_counter += 1;
-        if self.answered_counter <= self.setting.side_size() * self.setting.side_size() {
+        if self.setting.side_size() * self.setting.side_size() - 1 == self.answered_counter {
             self.status = GameState::Complete;
         }
     }
@@ -110,7 +107,7 @@ impl NormalGame {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum GameState {
     /// no answers.
     Empty,
@@ -249,6 +246,17 @@ mod tests {
         fn test_to_string() {
             assert_eq!(game().to_string(), GAME_STRING.to_string());
         }
+        #[test]
+        fn test_load_9_9_2() {
+            let mut game = NormalGame::new(setting::GameSetting {
+                block_height: 3,
+                block_width: 3,
+            });
+            game.load(
+                "4       1| 5   1 4 |  8 476  | 79|  3 7 2|      59|  681 9| 4 9   7|2       5",
+            );
+            assert_eq!(game.to_string(), "4       1| 5   1 4 |  8 476  | 79      |  3 7 2  |      59 |  681 9  | 4 9   7 |2       5")
+        }
     }
     mod set_answer {
         use super::*;
@@ -270,12 +278,12 @@ mod tests {
                 block_height: 1,
                 block_width: 2,
             });
-            assert_eq!(*game.status(), GameState::Empty);
+            assert_eq!(game.status(), GameState::Empty);
             game.set_answer(cell::Position::new(0, 0), 1);
             game.set_answer(cell::Position::new(1, 0), 2);
             game.set_answer(cell::Position::new(0, 1), 2);
             game.set_answer(cell::Position::new(1, 1), 1);
-            assert_eq!(*game.status(), GameState::Complete);
+            assert_eq!(game.status(), GameState::Complete);
         }
     }
 }

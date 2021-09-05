@@ -38,6 +38,9 @@ impl NormalGame {
     pub fn status(&self) -> &GameState {
         &self.status
     }
+    pub fn answered_counter(&self) -> u8 {
+        self.answered_counter
+    }
     /// ' 7     6 |6   1   3|  54 87  |  8   4  | 1  3  5 |  9   1  |  35 12  |7   2   8| 5     9 '
     pub fn load(&mut self, issue: &str) {
         let answer_columns: Vec<&str> = issue.split("|").collect();
@@ -83,6 +86,27 @@ impl NormalGame {
 
     pub fn find_cell(&self, pos: cell::Position) -> Option<&Rc<RefCell<cell::Cell>>> {
         self.cells.iter().find(|c| c.borrow().pos() == pos)
+    }
+
+    pub fn to_string(&self) -> String {
+        let mut str = String::new();
+        for y in (0..self.setting.side_size()).collect::<Vec<u8>>() {
+            for x in (0..self.setting.side_size()).collect::<Vec<u8>>() {
+                let str2 = match self
+                    .find_cell(cell::Position::new(x, y))
+                    .unwrap()
+                    .borrow()
+                    .answer()
+                {
+                    Some(a) => a.to_string(),
+                    None => " ".to_string(),
+                };
+                str = format!("{}{}", str, str2);
+            }
+            str = format!("{}{}", str, '|');
+        }
+        str.pop();
+        return str;
     }
 }
 
@@ -148,12 +172,13 @@ mod tests {
     }
     mod test_load {
         use super::*;
+        const GAME_STRING:&str = " 7     6 |6   1   3|  54 87  |  8   4  | 1  3  5 |  9   1  |  35 12  |7   2   8| 5     9 ";
         fn game() -> NormalGame {
             let mut game = NormalGame::new(setting::GameSetting {
                 block_height: 3,
                 block_width: 3,
             });
-            game.load(" 7     6 |6   1   3|  54 87  |  8   4  | 1  3  5 |  9   1  |  35 12  |7   2   8| 5     9 ");
+            game.load(GAME_STRING);
             game
         }
         mod load_9_9 {
@@ -219,6 +244,10 @@ mod tests {
                     Some(6)
                 );
             }
+        }
+        #[test]
+        fn test_to_string() {
+            assert_eq!(game().to_string(), GAME_STRING.to_string());
         }
     }
     mod set_answer {

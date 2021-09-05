@@ -57,6 +57,15 @@ impl NormalGame {
         }
         self.status = GameState::Loaded;
     }
+
+    pub fn set_answer(&self, pos: cell::Position, answer: u8) {
+        self.cells()
+            .iter()
+            .find(|c| c.borrow().pos() == pos)
+            .unwrap()
+            .borrow_mut()
+            .set_answer(answer);
+    }
 }
 
 pub enum GameState {
@@ -188,6 +197,21 @@ mod tests {
                     Some(6)
                 );
             }
+        }
+    }
+    mod set_answer {
+        use super::*;
+        #[test]
+        fn test() {
+            let game = NormalGame::new(SETTING);
+            game.set_answer(cell::Position::new(0, 0), 2);
+            assert_eq!(game.cells()[0].borrow().answer(), Some(2));
+        }
+        #[test]
+        fn test2() {
+            let game = NormalGame::new(SETTING);
+            game.set_answer(cell::Position::new(0, 0), 2);
+            assert_eq!(game.cells()[1].borrow().has_answer_candidate(2), false);
         }
     }
 }

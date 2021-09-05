@@ -6,7 +6,7 @@ use std::rc::Rc;
 // #[derive(Debug)]
 pub struct Group {
     cells: Vec<Rc<RefCell<cell::Cell>>>,
-    unanswerd_candidate: Vec<u8>,
+    answer_candidate: Vec<u8>,
 }
 
 impl Group {
@@ -21,7 +21,7 @@ impl Group {
     /// Group に所属する Cell の うち 1 つの Cell のみが保有している answer_candidate とその Cell の Position を返却する。
     pub fn get_lonely(&self) -> Vec<(cell::Position, u8)> {
         let mut lonelies: Vec<(cell::Position, u8)> = vec![];
-        for candidate in self.unanswerd_candidate.iter() {
+        for candidate in self.answer_candidate.iter() {
             let asdf: Vec<cell::Position> = self
                 .cells
                 .iter()
@@ -36,14 +36,21 @@ impl Group {
     }
 
     /// Remove the specified answer from the unanswerd_candidate.
-    pub fn remove_unanswerd_candidate(&mut self, answer: u8) {
-        self.unanswerd_candidate = self
-            .unanswerd_candidate
+    pub fn remove_answer_candidate(&mut self, answer: u8) {
+        self.answer_candidate = self
+            .answer_candidate
             .iter()
             .filter(|n| **n != answer)
             .map(|n| *n)
             .collect();
+        self.cells
+            .iter()
+            .for_each(|c| c.borrow_mut().remove_answer_candidate(answer));
     }
+
+    // pub fn has_a_cell_by_position(&self, pos:cell::Position) -> bool {
+    //     self.cells().iter().find()
+    // }
 }
 
 pub fn create_groups(
@@ -74,7 +81,7 @@ fn create_vertical_groups(
                     .filter(|c| c.borrow().pos().x() == *x)
                     .map(|c| c.clone())
                     .collect(),
-                unanswerd_candidate: setting.answer_candidate().clone(),
+                answer_candidate: setting.answer_candidate().clone(),
             }))
         })
         .collect()
@@ -94,7 +101,7 @@ fn create_horizontal_groups(
                     .filter(|c| c.borrow().pos().y() == *y)
                     .map(|c| c.clone())
                     .collect(),
-                unanswerd_candidate: setting.answer_candidate().clone(),
+                answer_candidate: setting.answer_candidate().clone(),
             }))
         })
         .collect()
@@ -122,7 +129,7 @@ fn create_block_groups(
         }
         vec.push(Rc::new(RefCell::new(Group {
             cells: one_group_cells,
-            unanswerd_candidate: setting.answer_candidate().clone(),
+            answer_candidate: setting.answer_candidate().clone(),
         })))
     }
     return vec;

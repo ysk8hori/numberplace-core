@@ -10,6 +10,7 @@ pub struct NormalGame {
     cells: Vec<Rc<RefCell<cell::Cell>>>,
     groups: Vec<Rc<RefCell<group::Group>>>,
     status: GameState,
+    answered_counter: u8,
 }
 
 impl NormalGame {
@@ -21,6 +22,7 @@ impl NormalGame {
             cells,
             groups,
             status: GameState::Empty,
+            answered_counter: 0,
         }
     }
 
@@ -58,7 +60,7 @@ impl NormalGame {
         self.status = GameState::Loaded;
     }
 
-    pub fn set_answer(&self, pos: cell::Position, answer: u8) {
+    pub fn set_answer(&mut self, pos: cell::Position, answer: u8) {
         self.cells()
             .iter()
             .find(|c| c.borrow().pos() == pos)
@@ -69,6 +71,14 @@ impl NormalGame {
             .iter()
             .filter(|g| g.borrow().cells().iter().any(|c| c.borrow().pos() == pos))
             .for_each(|g| g.borrow_mut().remove_answer_candidate(answer));
+        self.count_up();
+    }
+
+    fn count_up(&mut self) {
+        self.answered_counter += 1;
+        if self.answered_counter <= self.setting.side_size() * self.setting.side_size() {
+            self.status = GameState::Complete;
+        }
     }
 
     pub fn find_cell(&self, pos: cell::Position) -> Option<&Rc<RefCell<cell::Cell>>> {
@@ -76,9 +86,13 @@ impl NormalGame {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum GameState {
+    /// no answers.
     Empty,
+    /// game loaded.
     Loaded,
+    /// filled all answers.
     Complete,
 }
 
@@ -211,15 +225,28 @@ mod tests {
         use super::*;
         #[test]
         fn test() {
-            let game = NormalGame::new(SETTING);
+            let mut game = NormalGame::new(SETTING);
             game.set_answer(cell::Position::new(0, 0), 2);
             assert_eq!(game.cells()[0].borrow().answer(), Some(2));
         }
         #[test]
         fn remove_unanswerd_candidate_from_groups() {
-            let game = NormalGame::new(SETTING);
+            let mut game = NormalGame::new(SETTING);
             game.set_answer(cell::Position::new(0, 0), 2);
             assert_eq!(game.cells()[1].borrow().has_answer_candidate(2), false);
+        }
+        #[test]
+        fn status_changed_to_complete_when_filled_all_answers() {
+            let mut game = NormalGame::new(setting::GameSetting {
+                block_height: 1,
+                block_width: 2,
+            });
+            assert_eq!(*game.status(), GameState::Empty);
+            game.set_answer(cell::Position::new(0, 0), 1);
+            game.set_answer(cell::Position::new(1, 0), 2);
+            game.set_answer(cell::Position::new(0, 1), 2);
+            game.set_answer(cell::Position::new(1, 1), 1);
+            assert_eq!(*game.status(), GameState::Complete);
         }
     }
 }

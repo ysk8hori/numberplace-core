@@ -9,12 +9,12 @@ pub struct Solver {
 impl Solver {
     pub fn solving(&self) {}
 
-    pub fn set_answer(&self, pos: Position, answer: u8) {
+    pub fn set_answer(&mut self, pos: Position, answer: u8) {
         self.game.set_answer(pos, answer);
     }
 
     /// If there is only one possible answer, confirm it.
-    pub fn fill_lonely(&self) {
+    pub fn fill_lonely(&mut self) {
         let mut fillable_pos_answer: Vec<(Position, u8)> = vec![];
         for group in self.game.groups().iter() {
             for (pos, answer) in group.borrow().get_lonely().iter() {
@@ -44,7 +44,7 @@ mod test {
         #[test]
         fn test2() {
             let game = NormalGame::new(SETTING);
-            let solver = Solver { game };
+            let mut solver = Solver { game };
             // [1][ ][3]
             // [ ][ ][ ]
             // [ ][ ][ ] の状態にする👇

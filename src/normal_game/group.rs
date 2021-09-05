@@ -5,22 +5,31 @@ use std::rc::Rc;
 
 // #[derive(Debug)]
 pub struct Group {
-    pub cells: Vec<Rc<RefCell<cell::Cell>>>,
+    cells: Vec<Rc<RefCell<cell::Cell>>>,
     unanswerd_candidate: Vec<u8>,
 }
 
 impl Group {
-    // /// If there is only one possible answer, confirm it.
-    // pub fn fill_lonely(&self) {
-    //     for candidate in self.unanswerd_candidate.iter() {
-    //         let asdf: Vec<Rc<RefCell<cell::Cell>>> = self
-    //             .cells
-    //             .filter(|c| c.borrow().has_answer_candidate(*candidate));
-    //         if asdf.len() == 1 {
-    //             asdf.get(0).unwrap().borrow_mut().set_answer(*candidate);
-    //         }
-    //     }
-    // }
+    /// Get lonely, in the Group.
+    ///
+    /// Returns the answer_candidate and the position of the cell that is held by only one of the cells that belong to the group.
+    ///
+    /// Group に所属する Cell の うち 1 つの Cell のみが保有している answer_candidate とその Cell の Position を返却する。
+    pub fn get_lonely(&self) -> Vec<(cell::Position, u8)> {
+        let mut lonelies: Vec<(cell::Position, u8)> = vec![];
+        for candidate in self.unanswerd_candidate.iter() {
+            let asdf: Vec<cell::Position> = self
+                .cells
+                .iter()
+                .filter(|c| c.borrow().has_answer_candidate(*candidate))
+                .map(|c| c.borrow().pos())
+                .collect();
+            if asdf.len() == 1 {
+                lonelies.push((asdf[0], *candidate));
+            }
+        }
+        lonelies
+    }
 
     /// Remove the specified answer from the unanswerd_candidate.
     pub fn remove_unanswerd_candidate(&mut self, answer: u8) {
@@ -257,5 +266,30 @@ mod tests {
                 ]
             );
         }
+    }
+    #[test]
+    fn get_lonely_returns_lonely() {
+        let g = create_horizontal_groups(&cell::create_cells(&SETTING), &SETTING);
+        // index が 2 以外の cell の解答候補から 3 を除去
+        for (i, cell) in g[0].borrow().cells.iter().enumerate() {
+            if i == 2 {
+                continue;
+            };
+            cell.borrow_mut().remove_answer_candidate(3);
+        }
+        // index が 4 以外の cell の解答候補から 5 を除去
+        for (i, cell) in g[0].borrow().cells.iter().enumerate() {
+            if i == 4 {
+                continue;
+            };
+            cell.borrow_mut().remove_answer_candidate(5);
+        }
+        assert_eq!(
+            g[0].borrow().get_lonely(),
+            vec![
+                (cell::Position::new(2, 0), 3),
+                (cell::Position::new(4, 0), 5)
+            ]
+        );
     }
 }

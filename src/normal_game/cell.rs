@@ -55,10 +55,6 @@ impl Cell {
     pub fn answer(&self) -> Option<u8> {
         self.answer
     }
-
-    pub fn register_on_answered_callback(&mut self, cb: Callback) {
-        self.on_answered_callback.push(cb);
-    }
 }
 
 /// Position(x, y)
@@ -249,18 +245,6 @@ mod tests {
                 cell.set_answer(1);
                 assert_eq!(cell.answer(), Some(1));
             }
-        }
-    }
-    mod on_answered_callback {
-        use super::*;
-        #[test]
-        fn callback_on_answered() {
-            fn simple_callback(answer: u8) {
-                assert_eq!(answer, 1);
-            }
-            let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
-            cell.register_on_answered_callback(simple_callback);
-            cell.set_answer(1);
         }
     }
 }

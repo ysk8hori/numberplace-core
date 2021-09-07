@@ -10,7 +10,6 @@ pub struct Cell {
     pos: Position,
     answer_candidate: Vec<u8>,
     answer: Option<u8>,
-    on_answered_callback: Vec<Callback>,
 }
 
 impl Cell {
@@ -19,7 +18,6 @@ impl Cell {
             pos: position,
             answer_candidate,
             answer: None,
-            on_answered_callback: vec![],
         }
     }
     pub fn pos(&self) -> Position {
@@ -32,11 +30,17 @@ impl Cell {
         }
     }
     /// Cell to confirm the answer when there is only one candidate left, and return the answer.
-    pub fn try_fill_own_answer(&mut self) -> Option<u8> {
+    // pub fn try_fill_own_answer(&mut self) -> Option<u8> {
+    //     if self.answer_candidate.len() == 1 {
+    //         self.answer = Some(self.answer_candidate[0]);
+    //         self.answer_candidate.clear();
+    //         return self.answer;
+    //     }
+    //     return None;
+    // }
+    pub fn get_lonely(&self) -> Option<u8> {
         if self.answer_candidate.len() == 1 {
-            self.answer = Some(self.answer_candidate[0]);
-            self.answer_candidate.clear();
-            return self.answer;
+            return Some(self.answer_candidate[0]);
         }
         return None;
     }
@@ -44,13 +48,18 @@ impl Cell {
     pub fn set_answer(&mut self, answer: u8) {
         self.answer = Some(answer);
         self.answer_candidate.clear();
-        for cb in self.on_answered_callback.iter() {
-            cb(answer);
-        }
     }
 
     pub fn has_answer_candidate(&self, candidate: u8) -> bool {
         self.answer_candidate.iter().find(|a| **a == candidate) != None
+    }
+
+    pub fn answer_candidate_count(&self) -> usize {
+        self.answer_candidate.len()
+    }
+
+    pub fn answer_candidate(&self) -> std::slice::Iter<u8> {
+        self.answer_candidate.iter()
     }
 
     pub fn answer(&self) -> Option<u8> {
@@ -184,36 +193,31 @@ mod tests {
             cell.remove_answer_candidate(6);
             assert_eq!(cell.answer_candidate, []);
         }
-        mod try_fill_own_answer {
+        mod get_lonely {
             use super::*;
 
             #[test]
-            fn test_try_fill_own_answer() {
+            fn test_get_lonely() {
                 let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
-                assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
-                assert_eq!(cell.answer, None);
                 cell.remove_answer_candidate(1);
                 cell.remove_answer_candidate(2);
                 cell.remove_answer_candidate(4);
                 cell.remove_answer_candidate(5);
                 cell.remove_answer_candidate(6);
-                assert_eq!(cell.answer, None);
-                cell.try_fill_own_answer();
-                assert_eq!(cell.answer, Some(3));
-                assert_eq!(cell.answer_candidate, []);
+                assert_eq!(cell.get_lonely(), Some(3));
             }
-            #[test]
-            fn clear_candidate_when_setted_answer() {
-                let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
-                assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
-                cell.remove_answer_candidate(1);
-                cell.remove_answer_candidate(2);
-                cell.remove_answer_candidate(4);
-                cell.remove_answer_candidate(5);
-                cell.remove_answer_candidate(6);
-                cell.try_fill_own_answer();
-                assert_eq!(cell.answer_candidate, []);
-            }
+            // #[test]
+            // fn clear_candidate_when_setted_answer() {
+            //     let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+            //     assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
+            //     cell.remove_answer_candidate(1);
+            //     cell.remove_answer_candidate(2);
+            //     cell.remove_answer_candidate(4);
+            //     cell.remove_answer_candidate(5);
+            //     cell.remove_answer_candidate(6);
+            //     cell.try_fill_own_answer();
+            //     assert_eq!(cell.answer_candidate, []);
+            // }
         }
         mod set_answer {
             use super::*;
@@ -248,6 +252,25 @@ mod tests {
                 let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
                 cell.set_answer(1);
                 assert_eq!(cell.answer(), Some(1));
+            }
+        }
+        mod answer_candidate_count {
+            use super::*;
+            #[test]
+            fn returns_6_when_cell_has_6_answer_candidate() {
+                let cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+                assert_eq!(cell.answer_candidate_count(), 6);
+            }
+            #[test]
+            fn returns_true_when_cell_doesnt_have_answer_candidate() {
+                let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+                cell.remove_answer_candidate(1);
+                cell.remove_answer_candidate(2);
+                cell.remove_answer_candidate(3);
+                cell.remove_answer_candidate(4);
+                cell.remove_answer_candidate(5);
+                cell.remove_answer_candidate(6);
+                assert_eq!(cell.answer_candidate_count(), 0);
             }
         }
     }

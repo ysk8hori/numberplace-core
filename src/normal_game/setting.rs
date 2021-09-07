@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct GameSetting {
     pub block_height: u8,
     pub block_width: u8,

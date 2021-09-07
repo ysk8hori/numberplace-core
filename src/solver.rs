@@ -11,72 +11,69 @@ impl Solver {
     pub fn new(game: &NormalGame) -> Solver {
         Solver { game: game.clone() }
     }
+
+    /// Solve the game.
+    /// If the problem is solved, it returns a NormalGame instance with the solution filled in.
+    /// If the problem is inconsistent, it returns None.
+    /// Does not consider the case where there are multiple solutions.
+    ///
+    /// ゲームを解く。
+    /// 問題を解けた場合は、解答を記入済みの NormalGame インスタンスを返す。
+    /// 問題に矛盾がある場合は None を返す。
+    /// 複数の解答が存在する場合は考慮していない。
     pub fn solving(&self) -> Option<NormalGame> {
-        let mut count = 0;
         let mut game = self.game.clone();
         loop {
-            let before = game.answered_counter();
-            let pos_and_answers: Vec<(Position, u8)> = game
-                .cells()
-                .iter()
-                .map(|c| {
-                    let answer = c.borrow().get_lonely();
-                    if let Some(answer) = answer {
-                        Some((c.borrow().pos(), answer))
-                    } else {
-                        None
-                    }
-                })
-                .filter(|pos_and_answers| pos_and_answers.is_some())
-                .map(|pos_and_answers| pos_and_answers.unwrap())
-                .collect();
-            pos_and_answers.iter().for_each(|item| {
-                Self::set_answer(&mut game, item.0, item.1);
-            });
-            Self::fill_lonely(&mut game);
-            if game.status() == GameState::Complete {
-                return Some(game);
+            let before_count = game.answered_count();
+            Self::fill_lonely_in_cell(&mut game);
+            Self::fill_lonely_in_group(&mut game);
+            match game.status() {
+                GameState::Complete => return Some(game),
+                GameState::Failure => return None,
+                _ => {}
             }
-            if game.status() == GameState::Failure {
-                return None;
+            if before_count == game.answered_count() {
+                return self.assume_and_solve(&game);
             }
-            if before == game.answered_counter() {
-                if count == 2 {
-                    // 未回答のセルのうち answer_candidate が最も少ないセルを見つける
-                    let mut cells = game.cells().clone();
-                    cells.sort_by(|a, b| {
-                        a.borrow()
-                            .answer_candidate_count()
-                            .partial_cmp(&b.borrow().answer_candidate_count())
-                            .unwrap()
-                    });
-                    let cells: Vec<&std::rc::Rc<std::cell::RefCell<Cell>>> = cells
-                        .iter()
-                        .filter(|c| c.borrow().answer_candidate_count() != 0)
-                        .collect();
-                    let solved_game = cells[0]
-                        .borrow()
-                        .answer_candidate()
-                        .map(|candidate| {
-                            // ここで Game をクローンする
-                            let mut new_game = game.clone();
-                            // そのセルに仮で answer を設定する
-                            new_game.set_answer(cells[0].borrow().pos(), *candidate);
-                            // Solver を作って solving する
-                            let solver = Solver::new(&new_game);
-                            solver.solving()
-                        })
-                        .find(|g| g.is_some());
-                    if let Some(Some(game)) = solved_game {
-                        return Some(game);
-                    } else {
-                        return None;
-                    }
-                }
-                count += 1;
-            } else {
-                count = 0;
-            }
+        }
+    }
+
+    /// If no cell or group of cells with a single answer_candidate is found,
+    /// it finds the cell with the least answer_candidate among the unanswered cells, sets a temporary value, and solves.
+    /// If it solves the problem, it returns NormalGame with the answer already filled in, otherwise it returns None.
+    ///
+    /// answer_candidate が 1つのセルやグループが見つからない場合に、未回答のセルのうち answer_candidate が最も少ないセルを見つけ、仮に値を設定して解く。
+    /// 解けた場合は解答を記入済みの NormalGame を返却し、解けなかった場合は None を返却する。
+    fn assume_and_solve(&self, game: &NormalGame) -> Option<NormalGame> {
+        // Clone to avoid the effects of sorting.
+        let mut cells = game.cells().clone();
+        cells.sort_by(|a, b| {
+            a.borrow()
+                .answer_candidate_count()
+                .partial_cmp(&b.borrow().answer_candidate_count())
+                .unwrap()
+        });
+        let cells: Vec<&std::rc::Rc<std::cell::RefCell<Cell>>> = cells
+            .iter()
+            .filter(|c| c.borrow().answer_candidate_count() != 0)
+            .collect();
+        let solved_game = cells[0]
+            .borrow()
+            .answer_candidate()
+            .map(|candidate| {
+                // ここで Game をクローンする
+                let mut new_game = game.clone();
+                // そのセルに仮で answer を設定する
+                new_game.set_answer(cells[0].borrow().pos(), *candidate);
+                // Solver を作って solving する
+                let solver = Solver::new(&new_game);
+                solver.solving()
+            })
+            .find(|g| g.is_some());
+        if let Some(Some(game)) = solved_game {
+            return Some(game);
+        } else {
+            return None;
         }
     }
 
@@ -93,8 +90,29 @@ impl Solver {
         Self::remove_group_answer_candidate(game, pos, answer);
     }
 
-    /// If there is only one possible answer, confirm it.
-    fn fill_lonely(game: &mut NormalGame) {
+    /// If there is only one possible answer in each cell, confirm it.
+    fn fill_lonely_in_cell(game: &mut NormalGame) {
+        let pos_and_answers: Vec<(Position, u8)> = game
+            .cells()
+            .iter()
+            .map(|c| {
+                let answer = c.borrow().get_lonely();
+                if let Some(answer) = answer {
+                    Some((c.borrow().pos(), answer))
+                } else {
+                    None
+                }
+            })
+            .filter(|pos_and_answers| pos_and_answers.is_some())
+            .map(|pos_and_answers| pos_and_answers.unwrap())
+            .collect();
+        pos_and_answers.iter().for_each(|item| {
+            Self::set_answer(game, item.0, item.1);
+        });
+    }
+
+    /// If there is only one possible answer in each group, confirm it.
+    fn fill_lonely_in_group(game: &mut NormalGame) {
         let mut fillable_pos_answer: Vec<(Position, u8)> = vec![];
         for group in game.groups().iter() {
             for (pos, answer) in group.borrow().get_lonely().iter() {
@@ -132,7 +150,7 @@ mod test {
             // [1][🌟][3]
             // [ ][ ][ ]
             // [ ][ ][ ] 🌟の部分が確定する
-            Solver::fill_lonely(&mut game);
+            Solver::fill_lonely_in_group(&mut game);
 
             fn get_answer(game: &NormalGame, x: u8, y: u8) -> Option<u8> {
                 game.find_cell(Position::new(x, y))

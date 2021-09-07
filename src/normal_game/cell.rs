@@ -10,9 +10,9 @@ pub struct Cell {
 }
 
 impl Cell {
-    pub fn new(position: Position, answer_candidate: Vec<u8>) -> Cell {
+    pub fn new(pos: Position, answer_candidate: Vec<u8>) -> Cell {
         Cell {
-            pos: position,
+            pos,
             answer_candidate,
             answer: None,
         }
@@ -20,18 +20,29 @@ impl Cell {
     pub fn pos(&self) -> Position {
         self.pos
     }
+
+    pub fn answer_candidate(&self) -> std::slice::Iter<u8> {
+        self.answer_candidate.iter()
+    }
+
+    pub fn answer(&self) -> Option<u8> {
+        self.answer
+    }
+
     /// Deletes the specified candidate answer.
     pub fn remove_answer_candidate(&mut self, target: u8) {
         if let Ok(index) = self.answer_candidate.binary_search(&target) {
             self.answer_candidate.remove(index);
         }
     }
+
     pub fn get_lonely(&self) -> Option<u8> {
         if self.answer_candidate.len() == 1 {
             return Some(self.answer_candidate[0]);
         }
         return None;
     }
+
     /// Fill in the Cell with your answer and clear the answer suggestions.
     pub fn set_answer(&mut self, answer: u8) {
         self.answer = Some(answer);
@@ -44,14 +55,6 @@ impl Cell {
 
     pub fn answer_candidate_count(&self) -> usize {
         self.answer_candidate.len()
-    }
-
-    pub fn answer_candidate(&self) -> std::slice::Iter<u8> {
-        self.answer_candidate.iter()
-    }
-
-    pub fn answer(&self) -> Option<u8> {
-        self.answer
     }
 }
 

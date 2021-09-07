@@ -10,7 +10,7 @@ pub struct NormalGame {
     cells: Vec<Rc<RefCell<cell::Cell>>>,
     groups: Vec<Rc<RefCell<group::Group>>>,
     status: GameState,
-    answered_counter: u32,
+    answered_count: u32,
 }
 
 impl NormalGame {
@@ -22,13 +22,10 @@ impl NormalGame {
             cells,
             groups,
             status: GameState::Empty,
-            answered_counter: 0,
+            answered_count: 0,
         }
     }
 
-    pub fn setting(&self) -> &setting::GameSetting {
-        &self.setting
-    }
     pub fn cells(&self) -> &Vec<Rc<RefCell<cell::Cell>>> {
         &self.cells
     }
@@ -38,8 +35,8 @@ impl NormalGame {
     pub fn status(&self) -> GameState {
         self.status
     }
-    pub fn answered_counter(&self) -> u32 {
-        self.answered_counter
+    pub fn answered_count(&self) -> u32 {
+        self.answered_count
     }
     /// ' 7     6 |6   1   3|  54 87  |  8   4  | 1  3  5 |  9   1  |  35 12  |7   2   8| 5     9 '
     pub fn load(&mut self, issue: &str) {
@@ -80,9 +77,9 @@ impl NormalGame {
     }
 
     fn update_status(&mut self) {
-        self.answered_counter += 1;
+        self.answered_count += 1;
         if (self.setting.side_size() as u32 * self.setting.side_size() as u32) - 1
-            == self.answered_counter
+            == self.answered_count
         {
             self.status = GameState::Complete;
             return;

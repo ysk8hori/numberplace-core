@@ -16,7 +16,6 @@ impl Solver {
         &self.game
     }
     pub fn solving(&mut self) -> Option<NormalGame> {
-        println!("start solving");
         let mut count = 0;
         loop {
             let before = self.game.answered_counter();
@@ -37,27 +36,8 @@ impl Solver {
                 .collect();
             pos_and_answers.iter().for_each(|item| {
                 self.set_answer(item.0, item.1);
-                // self.remove_group_answer_candidate(item.0, item.1);
             });
-            // for rcell in self.game.cells().iter() {
-            //     let cell = rcell.borrow();
-            //     let answer = cell.get_lonely();
-            //     if let Some(answer) = answer {
-            //         self.set_answer(cell.pos(), answer);
-            //         self.game
-            //             .groups()
-            //             .iter()
-            //             .filter(|g| {
-            //                 g.borrow()
-            //                     .cells()
-            //                     .iter()
-            //                     .any(|c| c.borrow().pos() == cell.pos())
-            //             })
-            //             .for_each(|g| g.borrow_mut().remove_answer_candidate(answer));
-            //     }
-            // }
             self.fill_lonely();
-            println!("{:?}", self.game.status());
             if self.game.status() == GameState::Complete {
                 // return GameState::Complete;
                 return Some(self.game.clone());
@@ -66,9 +46,7 @@ impl Solver {
                 return None;
             }
             if before == self.game.answered_counter() {
-                println!("count:{}", count);
                 if count == 2 {
-                    println!("hello");
                     // 未回答のセルのうち answer_candidate が最も少ないセルを見つける
                     let mut cells = self.game.cells().clone();
                     cells.sort_by(|a, b| {
@@ -85,7 +63,6 @@ impl Solver {
                         .borrow()
                         .answer_candidate()
                         .map(|candidate| {
-                            println!("hello hello");
                             // ここで Game をクローンする
                             let mut new_game = self.game.clone();
                             // そのセルに仮で answer を設定する
@@ -96,20 +73,10 @@ impl Solver {
                         })
                         .find(|g| g.is_some());
                     if let Some(Some(game)) = asdf {
-                        // if let Some(game2) = game {
-                        println!("{}", game.to_string());
-                        // }
                         return Some(game);
                     } else {
-                        println!("ELSE");
                         return None;
                     }
-                    // .collect();
-
-                    // 未回答のセルのうち answer_candidate が 0 のセルがあった場合は GameState を XXX にして return
-
-                    // if count == 0 {
-                    // return GameState::Failure;
                 }
                 count += 1;
             } else {

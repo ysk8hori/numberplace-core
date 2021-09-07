@@ -10,7 +10,7 @@ pub struct NormalGame {
     cells: Vec<Rc<RefCell<cell::Cell>>>,
     groups: Vec<Rc<RefCell<group::Group>>>,
     status: GameState,
-    answered_counter: u8,
+    answered_counter: u32,
 }
 
 impl NormalGame {
@@ -38,19 +38,24 @@ impl NormalGame {
     pub fn status(&self) -> GameState {
         self.status
     }
-    pub fn answered_counter(&self) -> u8 {
+    pub fn answered_counter(&self) -> u32 {
         self.answered_counter
     }
     /// ' 7     6 |6   1   3|  54 87  |  8   4  | 1  3  5 |  9   1  |  35 12  |7   2   8| 5     9 '
     pub fn load(&mut self, issue: &str) {
         let answer_columns: Vec<&str> = issue.split("|").collect();
         for (y, horizontal_line) in answer_columns.iter().enumerate() {
-            let chars: Vec<char> = horizontal_line.chars().collect();
-            for (x, answer) in chars.iter().enumerate() {
-                if *answer == ' ' {
+            let horizontal_line = horizontal_line.to_string();
+            let answers: Vec<String> = if horizontal_line.contains(',') {
+                horizontal_line.split(',').map(|s| s.to_string()).collect()
+            } else {
+                horizontal_line.chars().map(|c| format!("{}", c)).collect()
+            };
+            for (x, answer) in answers.iter().enumerate() {
+                if *answer == " " || *answer == "" {
                     continue;
                 }
-                let answer: u8 = String::from(*answer).parse().expect("issue is wrong.");
+                let answer: u8 = answer.parse().expect("issue is wrong.");
                 self.set_answer(cell::Position::new(x as u8, y as u8), answer);
             }
         }
@@ -58,14 +63,12 @@ impl NormalGame {
     }
 
     pub fn set_answer(&mut self, pos: cell::Position, answer: u8) {
-        println!("NormalGame::set_answer pos:{:?} answer:{}", pos, answer);
         let cell = self
             .cells()
             .iter()
             .find(|c| c.borrow().pos() == pos)
             .unwrap();
         if cell.borrow().answer() != None {
-            println!("NormalGame::set_answer answered.");
             return;
         }
         cell.borrow_mut().set_answer(answer);
@@ -78,10 +81,10 @@ impl NormalGame {
 
     fn update_status(&mut self) {
         self.answered_counter += 1;
-        println!("answered_counter: {}", self.answered_counter);
-        if self.setting.side_size() * self.setting.side_size() - 1 == self.answered_counter {
+        if (self.setting.side_size() as u32 * self.setting.side_size() as u32) - 1
+            == self.answered_counter
+        {
             self.status = GameState::Complete;
-            println!("Complete");
             return;
         }
 
@@ -114,6 +117,26 @@ impl NormalGame {
                     None => " ".to_string(),
                 };
                 str = format!("{}{}", str, str2);
+            }
+            str = format!("{}{}", str, '|');
+        }
+        str.pop();
+        return str;
+    }
+    pub fn to_string_with_comma(&self) -> String {
+        let mut str = String::new();
+        for y in (0..self.setting.side_size()).collect::<Vec<u8>>() {
+            for x in (0..self.setting.side_size()).collect::<Vec<u8>>() {
+                let str2 = match self
+                    .find_cell(cell::Position::new(x, y))
+                    .unwrap()
+                    .borrow()
+                    .answer()
+                {
+                    Some(a) => a.to_string(),
+                    None => " ".to_string(),
+                };
+                str = format!("{}{}{}", str, if x == 0 { "" } else { "," }, str2);
             }
             str = format!("{}{}", str, '|');
         }
@@ -287,6 +310,17 @@ mod tests {
                 "4       1| 5   1 4 |  8 476  | 79|  3 7 2|      59|  681 9| 4 9   7|2       5",
             );
             assert_eq!(game.to_string(), "4       1| 5   1 4 |  8 476  | 79      |  3 7 2  |      59 |  681 9  | 4 9   7 |2       5")
+        }
+        #[test]
+        fn test_load_12x12() {
+            let mut game = NormalGame::new(setting::GameSetting {
+                block_height: 3,
+                block_width: 4,
+            });
+            game.load(
+                " , , ,6, , , , ,8| , , , ,12,10,5,11| , ,10,4, ,9,7, ,1,11|10, ,3, , , , , , ,7, ,12| ,5, , , ,12,10, , , ,9| ,7,8, ,9, , ,2, ,5,10| ,1,7, ,8, , ,6, ,3,4,| ,10, , , ,5,1, , , ,2|11, ,4, , , , , , ,12, ,7| , ,9,10, ,8,4, ,3,6,| , , , ,2,1,6,9,| , , ,11, , , , ,9",
+            );
+            assert_eq!(game.to_string_with_comma(), " , , ,6, , , , ,8, , , | , , , ,12,10,5,11, , , , | , ,10,4, ,9,7, ,1,11, , |10, ,3, , , , , , ,7, ,12| ,5, , , ,12,10, , , ,9, | ,7,8, ,9, , ,2, ,5,10, | ,1,7, ,8, , ,6, ,3,4, | ,10, , , ,5,1, , , ,2, |11, ,4, , , , , , ,12, ,7| , ,9,10, ,8,4, ,3,6, , | , , , ,2,1,6,9, , , , | , , ,11, , , , ,9, , , ")
         }
     }
     mod set_answer {

@@ -22,14 +22,14 @@ impl Group {
     pub fn get_lonely(&self) -> Vec<(cell::Position, u8)> {
         let mut lonelies: Vec<(cell::Position, u8)> = vec![];
         for candidate in self.answer_candidate.iter() {
-            let asdf: Vec<cell::Position> = self
+            let cells: Vec<cell::Position> = self
                 .cells
                 .iter()
                 .filter(|c| c.borrow().has_answer_candidate(*candidate))
                 .map(|c| c.borrow().pos())
                 .collect();
-            if asdf.len() == 1 {
-                lonelies.push((asdf[0], *candidate));
+            if cells.len() == 1 {
+                lonelies.push((cells[0], *candidate));
             }
         }
         lonelies
@@ -47,10 +47,6 @@ impl Group {
             .iter()
             .for_each(|c| c.borrow_mut().remove_answer_candidate(answer));
     }
-
-    // pub fn has_a_cell_by_position(&self, pos:cell::Position) -> bool {
-    //     self.cells().iter().find()
-    // }
 }
 
 pub fn create_groups(

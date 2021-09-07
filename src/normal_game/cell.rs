@@ -1,9 +1,6 @@
 use crate::normal_game::setting;
-// use std::boxed::Box;
 use std::cell::RefCell;
 use std::rc::Rc;
-
-type Callback = fn(u8);
 
 #[derive(Debug, PartialEq)]
 pub struct Cell {
@@ -29,15 +26,6 @@ impl Cell {
             self.answer_candidate.remove(index);
         }
     }
-    /// Cell to confirm the answer when there is only one candidate left, and return the answer.
-    // pub fn try_fill_own_answer(&mut self) -> Option<u8> {
-    //     if self.answer_candidate.len() == 1 {
-    //         self.answer = Some(self.answer_candidate[0]);
-    //         self.answer_candidate.clear();
-    //         return self.answer;
-    //     }
-    //     return None;
-    // }
     pub fn get_lonely(&self) -> Option<u8> {
         if self.answer_candidate.len() == 1 {
             return Some(self.answer_candidate[0]);
@@ -206,18 +194,6 @@ mod tests {
                 cell.remove_answer_candidate(6);
                 assert_eq!(cell.get_lonely(), Some(3));
             }
-            // #[test]
-            // fn clear_candidate_when_setted_answer() {
-            //     let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
-            //     assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
-            //     cell.remove_answer_candidate(1);
-            //     cell.remove_answer_candidate(2);
-            //     cell.remove_answer_candidate(4);
-            //     cell.remove_answer_candidate(5);
-            //     cell.remove_answer_candidate(6);
-            //     cell.try_fill_own_answer();
-            //     assert_eq!(cell.answer_candidate, []);
-            // }
         }
         mod set_answer {
             use super::*;

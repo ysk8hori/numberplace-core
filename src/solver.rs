@@ -21,7 +21,7 @@ impl Solver {
     /// 問題を解けた場合は、解答を記入済みの NormalGame インスタンスを返す。
     /// 問題に矛盾がある場合は None を返す。
     /// 複数の解答が存在する場合は考慮していない。
-    pub fn solving(&self) -> Option<NormalGame> {
+    pub fn solve(&self) -> Option<NormalGame> {
         let mut game = self.game.clone();
         loop {
             let before_count = game.answered_count();
@@ -61,13 +61,10 @@ impl Solver {
             .borrow()
             .answer_candidate()
             .map(|candidate| {
-                // ここで Game をクローンする
                 let mut new_game = game.clone();
-                // そのセルに仮で answer を設定する
                 new_game.set_answer(cells[0].borrow().pos(), *candidate);
-                // Solver を作って solving する
                 let solver = Solver::new(&new_game);
-                solver.solving()
+                solver.solve()
             })
             .find(|g| g.is_some());
         if let Some(Some(game)) = solved_game {
@@ -164,7 +161,7 @@ mod test {
             assert_eq!(get_answer(&game, 2, 0), Some(3));
         }
     }
-    mod solving {
+    mod solve {
         use super::*;
         mod setting_1_2 {
             use super::*;
@@ -177,7 +174,7 @@ mod test {
                 let mut game = NormalGame::new(SETTING);
                 game.load("1");
                 let solver = Solver { game };
-                let solved_game = solver.solving();
+                let solved_game = solver.solve();
                 assert_eq!(solved_game.unwrap().to_string(), "12|21");
             }
         }
@@ -195,17 +192,17 @@ mod test {
                     "4       1| 5   1 4 |  8 476  | 79|  3 7 2|      59|  681 9| 4 9   7|2       5",
                 );
                 let solver = Solver { game };
-                let game = solver.solving().unwrap();
+                let game = solver.solve().unwrap();
                 assert_eq!(game.to_string(), "462593781|957681342|318247659|679152438|583479216|124368597|736815924|845926173|291734865".to_string());
             }
             #[test]
-            fn returns_none_when_failed_to_solving() {
+            fn returns_none_when_failed_to_solve() {
                 let mut game = NormalGame::new(SETTING);
                 game.load(
                     "45      1| 5   1 4 |  8 476  | 79|  3 7 2|      59|  681 9| 4 9   7|2       5",
                 );
                 let solver = Solver { game };
-                let game = solver.solving();
+                let game = solver.solve();
                 assert!(game.is_none());
             }
         }

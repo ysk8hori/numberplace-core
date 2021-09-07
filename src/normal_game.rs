@@ -58,12 +58,14 @@ impl NormalGame {
     }
 
     pub fn set_answer(&mut self, pos: cell::Position, answer: u8) {
+        println!("NormalGame::set_answer pos:{:?} answer:{}", pos, answer);
         let cell = self
             .cells()
             .iter()
             .find(|c| c.borrow().pos() == pos)
             .unwrap();
         if cell.borrow().answer() != None {
+            println!("NormalGame::set_answer answered.");
             return;
         }
         cell.borrow_mut().set_answer(answer);
@@ -71,13 +73,26 @@ impl NormalGame {
             .iter()
             .filter(|g| g.borrow().cells().iter().any(|c| c.borrow().pos() == pos))
             .for_each(|g| g.borrow_mut().remove_answer_candidate(answer));
-        self.count_up();
+        self.update_status();
     }
 
-    fn count_up(&mut self) {
+    fn update_status(&mut self) {
         self.answered_counter += 1;
+        println!("answered_counter: {}", self.answered_counter);
         if self.setting.side_size() * self.setting.side_size() - 1 == self.answered_counter {
             self.status = GameState::Complete;
+            println!("Complete");
+            return;
+        }
+
+        if self
+            .cells()
+            .iter()
+            .filter(|c| c.borrow().answer() == None)
+            .any(|c| c.borrow().answer_candidate_count() == 0)
+        {
+            self.status = GameState::Failure;
+            return;
         }
     }
 
@@ -107,14 +122,30 @@ impl NormalGame {
     }
 }
 
+impl Clone for NormalGame {
+    fn clone(&self) -> Self {
+        let mut new_game = NormalGame::new(self.setting);
+        self.cells()
+            .iter()
+            .filter(|c| c.borrow().answer() != None)
+            .for_each(|c| new_game.set_answer(c.borrow().pos(), c.borrow().answer().unwrap()));
+        new_game.status = GameState::Creating;
+        new_game
+    }
+}
+
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum GameState {
     /// no answers.
     Empty,
+    /// game creating.
+    Creating,
     /// game loaded.
     Loaded,
     /// filled all answers.
     Complete,
+    /// Failure
+    Failure,
 }
 
 #[cfg(test)]

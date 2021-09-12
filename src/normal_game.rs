@@ -78,10 +78,14 @@ impl NormalGame {
 
     fn update_status(&mut self) {
         self.answered_count += 1;
-        if (self.setting.side_size() as u32 * self.setting.side_size() as u32) - 1
+        if (self.setting.side_size() as u32 * self.setting.side_size() as u32)
             == self.answered_count
         {
-            self.status = GameState::Complete;
+            if self.is_all_clear_groups_answer_candidate() {
+                self.status = GameState::Complete;
+            } else {
+                self.status = GameState::Failure;
+            };
             return;
         }
 
@@ -96,14 +100,20 @@ impl NormalGame {
         }
     }
 
+    fn is_all_clear_groups_answer_candidate(&self) -> bool {
+        self.groups()
+            .iter()
+            .all(|g| g.borrow().is_all_clear_answer_candidate())
+    }
+
     pub fn find_cell(&self, pos: cell::Position) -> Option<&Rc<RefCell<cell::Cell>>> {
         self.cells.iter().find(|c| c.borrow().pos() == pos)
     }
 
     pub fn to_string(&self) -> String {
         let mut str = String::new();
-        for y in (0..self.setting.side_size()).collect::<Vec<u8>>() {
-            for x in (0..self.setting.side_size()).collect::<Vec<u8>>() {
+        for y in 0..self.setting.side_size() {
+            for x in 0..self.setting.side_size() {
                 let str2 = match self
                     .find_cell(cell::Position::new(x, y))
                     .unwrap()
@@ -122,8 +132,8 @@ impl NormalGame {
     }
     pub fn to_string_with_comma(&self) -> String {
         let mut str = String::new();
-        for y in (0..self.setting.side_size()).collect::<Vec<u8>>() {
-            for x in (0..self.setting.side_size()).collect::<Vec<u8>>() {
+        for y in 0..self.setting.side_size() {
+            for x in 0..self.setting.side_size() {
                 let str2 = match self
                     .find_cell(cell::Position::new(x, y))
                     .unwrap()

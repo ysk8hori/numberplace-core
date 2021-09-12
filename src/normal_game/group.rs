@@ -47,16 +47,20 @@ impl Group {
             .iter()
             .for_each(|c| c.borrow_mut().remove_answer_candidate(answer));
     }
+
+    pub fn is_all_clear_answer_candidate(&self) -> bool {
+        self.answer_candidate.len() == 0
+    }
 }
 
 pub fn create_groups(
     cells: &Vec<Rc<RefCell<cell::Cell>>>,
     setting: &setting::GameSetting,
 ) -> Vec<Rc<RefCell<Group>>> {
-    let vg = create_vertical_groups(&cells, &setting);
     let hg = create_horizontal_groups(&cells, &setting);
+    let vg = create_vertical_groups(&cells, &setting);
     let gg = create_block_groups(&cells, &setting);
-    vec![vg, hg, gg]
+    vec![hg, vg, gg]
         .iter()
         .flatten()
         .map(|g| g.clone())
@@ -111,8 +115,8 @@ fn create_block_groups(
     let mut vec: Vec<Rc<RefCell<Group>>> = vec![];
     for start_pos in block_start_positions {
         let mut one_group_cells: Vec<Rc<RefCell<cell::Cell>>> = vec![];
-        for y in (0..setting.block_height).collect::<Vec<u8>>() {
-            for x in (0..setting.block_width).collect::<Vec<u8>>() {
+        for y in 0..setting.block_height {
+            for x in 0..setting.block_width {
                 let pos = start_pos.move_y(y).move_x(x);
                 one_group_cells.push(
                     cells

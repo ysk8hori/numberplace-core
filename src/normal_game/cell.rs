@@ -81,8 +81,8 @@ impl Position {
 
 pub fn create_cells(setting: &setting::GameSetting) -> Vec<Rc<RefCell<Cell>>> {
     let mut cells = Vec::new();
-    for x in 0..setting.side_size() {
-        for y in 0..setting.side_size() {
+    for y in 0..setting.side_size() {
+        for x in 0..setting.side_size() {
             cells.push(Rc::new(RefCell::new(Cell::new(
                 Position(x, y),
                 setting.answer_candidate(),
@@ -122,8 +122,8 @@ mod tests {
                 assert_eq!(create_cells(&SETTING)[0].borrow().pos, Position(0, 0));
             }
             #[test]
-            fn second_cell_position_is_0_1() {
-                assert_eq!(create_cells(&SETTING)[1].borrow().pos, Position(0, 1));
+            fn second_cell_position_is_1_0() {
+                assert_eq!(create_cells(&SETTING)[1].borrow().pos, Position(1, 0));
             }
             #[test]
             fn last_cell_position_is_5_5() {

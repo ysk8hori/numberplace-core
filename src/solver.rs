@@ -74,17 +74,8 @@ impl Solver {
         }
     }
 
-    /// 指定されたポジションのセルを保有するグループの解答候補から、指定した答えを削除する。
-    fn remove_group_answer_candidate(game: &NormalGame, pos: Position, answer: u8) {
-        game.groups()
-            .iter()
-            .filter(|g| g.borrow().cells().iter().any(|c| c.borrow().pos() == pos))
-            .for_each(|g| g.borrow_mut().remove_answer_candidate(answer));
-    }
-
     fn set_answer(game: &mut NormalGame, pos: Position, answer: u8) {
         game.set_answer(pos, answer);
-        Self::remove_group_answer_candidate(game, pos, answer);
     }
 
     /// If there is only one possible answer in each cell, confirm it.
@@ -194,6 +185,14 @@ mod test {
                 let solver = Solver { game };
                 let game = solver.solve().unwrap();
                 assert_eq!(game.to_string(), "462593781|957681342|318247659|679152438|583479216|124368597|736815924|845926173|291734865".to_string());
+            }
+            #[test]
+            // #[ignore]
+            fn from_empty_9x9() {
+                let game = NormalGame::new(SETTING);
+                let solver = Solver { game };
+                let game = solver.solve().unwrap();
+                assert!(game.to_string().starts_with("123456789"));
             }
             #[test]
             fn returns_none_when_failed_to_solve() {

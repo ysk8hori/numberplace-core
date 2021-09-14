@@ -1,3 +1,4 @@
+pub mod generator;
 pub mod normal_game;
 pub mod solver;
 
@@ -8,14 +9,22 @@ mod tests {
         use super::*;
         mod setting_3_3 {
             use super::*;
+            use crate::normal_game::setting::BlockSize;
+            use crate::normal_game::setting::GameSetting;
 
-            const SETTING: normal_game::setting::GameSetting = normal_game::setting::GameSetting {
-                block_height: 3,
-                block_width: 3,
-            };
+            fn setting() -> GameSetting {
+                GameSetting::new_with_answer_candidate(
+                    BlockSize {
+                        height: 3,
+                        width: 3,
+                    },
+                    // vec![9, 8, 7, 6, 5, 4, 3, 2, 1],
+                    vec![2, 3, 4, 5, 6, 8, 7, 9, 1],
+                )
+            }
             #[test]
             fn intermediate1_16_9x9() {
-                let mut game = normal_game::NormalGame::new(SETTING);
+                let mut game = normal_game::NormalGame::new(setting());
                 game.load(" 7     6 |6   1   3|  54 87  |  8   4  | 1  3  5 |  9   1  |  35 12  |7   2   8| 5     9 ");
                 let solver = solver::Solver::new(&game);
                 let game = solver.solve();
@@ -24,7 +33,7 @@ mod tests {
             }
             #[test]
             fn intermediate1_96_9x9() {
-                let mut game = normal_game::NormalGame::new(SETTING);
+                let mut game = normal_game::NormalGame::new(setting());
                 game.load(
                     "4       1| 5   1 4 |  8 476  | 79|  3 7 2|      59|  681 9| 4 9   7|2       5",
                 );
@@ -34,7 +43,7 @@ mod tests {
             }
             #[test]
             fn intermediate1_98_9x9() {
-                let mut game = normal_game::NormalGame::new(SETTING);
+                let mut game = normal_game::NormalGame::new(setting());
                 game.load(
                     "7  4 1  9| 62    3|   2   1|5     3 8||9 4     2| 7   9| 5    84|3  8 7  6",
                 );
@@ -45,7 +54,7 @@ mod tests {
             #[test]
             // #[ignore]
             fn advanced0_5_9x9() {
-                let mut game = normal_game::NormalGame::new(SETTING);
+                let mut game = normal_game::NormalGame::new(setting());
                 game.load("  4   7 3|8  9 2| 3| 891|5       8|     926|       2|   8 4  5|6 5   1");
                 let solver = solver::Solver::new(&game);
                 let solved_game = solver.solve();
@@ -54,7 +63,7 @@ mod tests {
             #[test]
             // #[ignore]
             fn advanced0_6_9x9() {
-                let mut game = normal_game::NormalGame::new(SETTING);
+                let mut game = normal_game::NormalGame::new(setting());
                 game.load("  4  37|9  82   6|  7   9|6      8| 1  3  2| 9      5|  9   1|1   42  3|  85  2");
                 let solver = solver::Solver::new(&game);
                 let solved_game = solver.solve();
@@ -63,7 +72,7 @@ mod tests {
             #[test]
             // #[ignore]
             fn advanced0_7_9x9() {
-                let mut game = normal_game::NormalGame::new(SETTING);
+                let mut game = normal_game::NormalGame::new(setting());
                 game.load(" 4   6 3|7   4   1|   8  9|  1     8| 2  3  6|3     1|  7  4|1   8   7| 6 3   2");
                 let solver = solver::Solver::new(&game);
                 let solved_game = solver.solve();
@@ -72,7 +81,7 @@ mod tests {
             #[test]
             // #[ignore]
             fn advanced0_8_9x9() {
-                let mut game = normal_game::NormalGame::new(SETTING);
+                let mut game = normal_game::NormalGame::new(setting());
                 game.load("5 2 9 1|   1   8|3    6  2| 4    7|6       1|  5    9|9  7    4| 6   3|  7 2 5 3");
                 let solver = solver::Solver::new(&game);
                 let solved_game = solver.solve();
@@ -82,14 +91,16 @@ mod tests {
 
         mod setting_3_4 {
             use super::*;
-            const SETTING: normal_game::setting::GameSetting = normal_game::setting::GameSetting {
-                block_height: 3,
-                block_width: 4,
-            };
+            use crate::normal_game::setting::BlockSize;
             #[test]
             // #[ignore]
             fn advanced0_33_12x12() {
-                let mut game = normal_game::NormalGame::new(SETTING);
+                let mut game = normal_game::NormalGame::new(
+                    normal_game::setting::GameSetting::new(BlockSize {
+                        height: 3,
+                        width: 4,
+                    }),
+                );
                 game.load(" , , ,6, , , , ,8| , , , ,12,10,5,11| , ,10,4, ,9,7, ,1,11|10, ,3, , , , , , ,7, ,12| ,5, , , ,12,10, , , ,9| ,7,8, ,9, , ,2, ,5,10| ,1,7, ,8, , ,6, ,3,4,| ,10, , , ,5,1, , , ,2|11, ,4, , , , , , ,12, ,7| , ,9,10, ,8,4, ,3,6,| , , , ,2,1,6,9,| , , ,11, , , , ,9");
                 let solver = solver::Solver::new(&game);
                 let solved_game = solver.solve();
@@ -99,14 +110,16 @@ mod tests {
 
         mod setting_4_4 {
             use super::*;
-            const SETTING: normal_game::setting::GameSetting = normal_game::setting::GameSetting {
-                block_height: 4,
-                block_width: 4,
-            };
+            use crate::normal_game::setting::BlockSize;
             #[test]
             // #[ignore]
             fn advanced0_33_16x16() {
-                let mut game = normal_game::NormalGame::new(SETTING);
+                let mut game = normal_game::NormalGame::new(
+                    normal_game::setting::GameSetting::new(BlockSize {
+                        height: 4,
+                        width: 4,
+                    }),
+                );
                 game.load("7, , ,11,4, , ,10,2, , ,1,12, , ,5| , ,6, , ,3, , , , ,16, , ,10| ,10,14, , ,13,7, , ,5,6, , ,3,1,|2, , , , , , ,15,13, , , , , , ,14|8, , , , , , ,1,12, , , , , , ,11| ,13,12, , ,8,15, , ,9,5, , ,14,16| , ,10, , ,2, , , , ,11, , ,7,|15, , ,9,5, , ,12,4, , ,2,6, , ,8|10, , ,5,1, , ,16,15, , ,9,8, , ,4| , ,8, , ,10, , , , ,1, , ,6| ,7,11, , ,4,8, , ,14,12, , ,5,3|4, , , , , , ,5,7, , , , , , ,10|9, , , , , , ,14,10, , , , , , ,1| ,6,2, , ,7,5, , ,11,9, , ,4,8| , ,13, , ,15, , , , ,3, , ,16|16, , ,3,10, , ,4,6, , ,14,13, , ,12");
                 let solver = solver::Solver::new(&game);
                 let solved_game = solver.solve();

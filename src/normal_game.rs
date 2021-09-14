@@ -9,7 +9,6 @@ pub struct NormalGame {
     setting: setting::GameSetting,
     cells: Vec<Rc<RefCell<cell::Cell>>>,
     groups: Vec<Rc<RefCell<group::Group>>>,
-    status: GameState,
     answered_count: u32,
 }
 
@@ -21,7 +20,6 @@ impl NormalGame {
             setting,
             cells,
             groups,
-            status: GameState::Empty,
             answered_count: 0,
         }
     }
@@ -31,9 +29,6 @@ impl NormalGame {
     }
     pub fn groups(&self) -> &Vec<Rc<RefCell<group::Group>>> {
         &self.groups
-    }
-    pub fn status(&self) -> GameState {
-        self.status
     }
     pub fn answered_count(&self) -> u32 {
         self.answered_count
@@ -56,7 +51,6 @@ impl NormalGame {
                 self.set_answer(cell::Position::new(x as u8, y as u8), answer);
             }
         }
-        self.status = GameState::Loaded;
     }
 
     pub fn set_answer(&mut self, pos: cell::Position, answer: u8) {
@@ -73,31 +67,37 @@ impl NormalGame {
             .iter()
             .filter(|g| g.borrow().cells().iter().any(|c| c.borrow().pos() == pos))
             .for_each(|g| g.borrow_mut().remove_answer_candidate(answer));
-        self.update_status();
+        self.answered_count += 1;
     }
 
-    fn update_status(&mut self) {
-        self.answered_count += 1;
-        if (self.setting.side_size() as u32 * self.setting.side_size() as u32)
-            == self.answered_count
-        {
-            if self.is_all_clear_groups_answer_candidate() {
-                self.status = GameState::Complete;
-            } else {
-                self.status = GameState::Failure;
-            };
-            return;
-        }
-
+    pub fn check_status(&mut self) -> GameState {
         if self
             .cells()
             .iter()
             .filter(|c| c.borrow().answer() == None)
             .any(|c| c.borrow().answer_candidate_count() == 0)
         {
-            self.status = GameState::Failure;
-            return;
+            return GameState::Failure;
         }
+
+        if self
+            .groups()
+            .iter()
+            .any(|g| g.borrow().is_duplicate_answer())
+        {
+            return GameState::Failure;
+        }
+
+        if (self.setting.side_size() as u32 * self.setting.side_size() as u32)
+            == self.answered_count
+        {
+            return if self.is_all_clear_groups_answer_candidate() {
+                GameState::Complete
+            } else {
+                GameState::Failure
+            };
+        }
+        return GameState::Solving;
     }
 
     fn is_all_clear_groups_answer_candidate(&self) -> bool {
@@ -154,38 +154,33 @@ impl NormalGame {
 
 impl Clone for NormalGame {
     fn clone(&self) -> Self {
-        let mut new_game = NormalGame::new(self.setting);
+        let mut new_game = NormalGame::new(self.setting.clone());
         self.cells()
             .iter()
             .filter(|c| c.borrow().answer() != None)
             .for_each(|c| new_game.set_answer(c.borrow().pos(), c.borrow().answer().unwrap()));
-        new_game.status = GameState::Creating;
         new_game
     }
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum GameState {
-    /// no answers.
-    Empty,
-    /// game creating.
-    Creating,
-    /// game loaded.
-    Loaded,
-    /// filled all answers.
+    Solving,
     Complete,
-    /// Failure
     Failure,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    const SETTING: setting::GameSetting = setting::GameSetting {
-        block_height: 2,
-        block_width: 3,
-    };
+    use crate::normal_game::setting::BlockSize;
+    use crate::normal_game::setting::GameSetting;
+    fn setting() -> GameSetting {
+        GameSetting::new(BlockSize {
+            height: 2,
+            width: 3,
+        })
+    }
 
     #[cfg(test)]
     mod _2_3 {
@@ -193,38 +188,43 @@ mod tests {
 
         #[test]
         fn it_answer_candidate_is_1_to_6() {
-            assert_eq!(SETTING.answer_candidate(), vec![1, 2, 3, 4, 5, 6]);
+            assert_eq!(setting().answer_candidate(), vec![1, 2, 3, 4, 5, 6]);
         }
         #[test]
         fn it_has_36_cells() {
-            let game = NormalGame::new(SETTING);
+            let game = NormalGame::new(setting());
             assert_eq!(game.cells.len(), 36);
         }
         #[test]
         fn it_has_18_groups() {
-            let game = NormalGame::new(SETTING);
+            let game = NormalGame::new(setting());
             assert_eq!(game.groups.len(), 18);
         }
     }
     mod _3_3 {
         use super::*;
-        const SETTING: setting::GameSetting = setting::GameSetting {
-            block_height: 3,
-            block_width: 3,
-        };
+        fn setting() -> GameSetting {
+            GameSetting::new(BlockSize {
+                height: 3,
+                width: 3,
+            })
+        }
 
         #[test]
         fn it_answer_candidate_is_1_to_9() {
-            assert_eq!(SETTING.answer_candidate(), vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
+            assert_eq!(
+                setting().answer_candidate(),
+                vec![1, 2, 3, 4, 5, 6, 7, 8, 9]
+            );
         }
         #[test]
         fn it_has_81_cells() {
-            let game = NormalGame::new(SETTING);
+            let game = NormalGame::new(setting());
             assert_eq!(game.cells.len(), 81);
         }
         #[test]
         fn it_has_27_groups() {
-            let game = NormalGame::new(SETTING);
+            let game = NormalGame::new(setting());
             assert_eq!(game.groups.len(), 27);
         }
     }
@@ -232,10 +232,10 @@ mod tests {
         use super::*;
         const GAME_STRING:&str = " 7     6 |6   1   3|  54 87  |  8   4  | 1  3  5 |  9   1  |  35 12  |7   2   8| 5     9 ";
         fn game() -> NormalGame {
-            let mut game = NormalGame::new(setting::GameSetting {
-                block_height: 3,
-                block_width: 3,
-            });
+            let mut game = NormalGame::new(setting::GameSetting::new(BlockSize {
+                height: 3,
+                width: 3,
+            }));
             game.load(GAME_STRING);
             game
         }
@@ -309,10 +309,10 @@ mod tests {
         }
         #[test]
         fn test_load_9_9_2() {
-            let mut game = NormalGame::new(setting::GameSetting {
-                block_height: 3,
-                block_width: 3,
-            });
+            let mut game = NormalGame::new(setting::GameSetting::new(BlockSize {
+                height: 3,
+                width: 3,
+            }));
             game.load(
                 "4       1| 5   1 4 |  8 476  | 79|  3 7 2|      59|  681 9| 4 9   7|2       5",
             );
@@ -320,10 +320,10 @@ mod tests {
         }
         #[test]
         fn test_load_12x12() {
-            let mut game = NormalGame::new(setting::GameSetting {
-                block_height: 3,
-                block_width: 4,
-            });
+            let mut game = NormalGame::new(setting::GameSetting::new(BlockSize {
+                height: 3,
+                width: 4,
+            }));
             game.load(
                 " , , ,6, , , , ,8| , , , ,12,10,5,11| , ,10,4, ,9,7, ,1,11|10, ,3, , , , , , ,7, ,12| ,5, , , ,12,10, , , ,9| ,7,8, ,9, , ,2, ,5,10| ,1,7, ,8, , ,6, ,3,4,| ,10, , , ,5,1, , , ,2|11, ,4, , , , , , ,12, ,7| , ,9,10, ,8,4, ,3,6,| , , , ,2,1,6,9,| , , ,11, , , , ,9",
             );
@@ -334,28 +334,15 @@ mod tests {
         use super::*;
         #[test]
         fn test() {
-            let mut game = NormalGame::new(SETTING);
+            let mut game = NormalGame::new(setting());
             game.set_answer(cell::Position::new(0, 0), 2);
             assert_eq!(game.cells()[0].borrow().answer(), Some(2));
         }
         #[test]
         fn remove_unanswerd_candidate_from_groups() {
-            let mut game = NormalGame::new(SETTING);
+            let mut game = NormalGame::new(setting());
             game.set_answer(cell::Position::new(0, 0), 2);
             assert_eq!(game.cells()[1].borrow().has_answer_candidate(2), false);
-        }
-        #[test]
-        fn status_changed_to_complete_when_filled_all_answers() {
-            let mut game = NormalGame::new(setting::GameSetting {
-                block_height: 1,
-                block_width: 2,
-            });
-            assert_eq!(game.status(), GameState::Empty);
-            game.set_answer(cell::Position::new(0, 0), 1);
-            game.set_answer(cell::Position::new(1, 0), 2);
-            game.set_answer(cell::Position::new(0, 1), 2);
-            game.set_answer(cell::Position::new(1, 1), 1);
-            assert_eq!(game.status(), GameState::Complete);
         }
     }
 }

@@ -95,16 +95,19 @@ pub fn create_cells(setting: &setting::GameSetting) -> Vec<Rc<RefCell<Cell>>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const SETTING: setting::GameSetting = setting::GameSetting {
-        block_height: 2,
-        block_width: 3,
-    };
+    use crate::normal_game::setting::BlockSize;
+    fn setting() -> setting::GameSetting {
+        setting::GameSetting::new(BlockSize {
+            height: 2,
+            width: 3,
+        })
+    }
     mod test_gamesetting {
         use super::*;
         #[test]
         fn answer_candidate_is_generated_each_time() {
-            let mut candidate1 = SETTING.answer_candidate();
-            let candidate2 = SETTING.answer_candidate();
+            let mut candidate1 = setting().answer_candidate();
+            let candidate2 = setting().answer_candidate();
             candidate1.remove(0);
             assert_ne!(candidate1, candidate2);
         }
@@ -115,34 +118,36 @@ mod tests {
             use super::*;
             #[test]
             fn returns_36_cells() {
-                assert_eq!(create_cells(&SETTING).len(), 36)
+                assert_eq!(create_cells(&setting()).len(), 36)
             }
             #[test]
             fn first_cell_position_is_0_0() {
-                assert_eq!(create_cells(&SETTING)[0].borrow().pos, Position(0, 0));
+                assert_eq!(create_cells(&setting())[0].borrow().pos, Position(0, 0));
             }
             #[test]
             fn second_cell_position_is_1_0() {
-                assert_eq!(create_cells(&SETTING)[1].borrow().pos, Position(1, 0));
+                assert_eq!(create_cells(&setting())[1].borrow().pos, Position(1, 0));
             }
             #[test]
             fn last_cell_position_is_5_5() {
-                assert_eq!(create_cells(&SETTING)[35].borrow().pos, Position(5, 5));
+                assert_eq!(create_cells(&setting())[35].borrow().pos, Position(5, 5));
             }
         }
         mod given_3_3 {
             use super::*;
-            const SETTING: setting::GameSetting = setting::GameSetting {
-                block_height: 3,
-                block_width: 3,
-            };
+            fn setting() -> setting::GameSetting {
+                setting::GameSetting::new(BlockSize {
+                    height: 3,
+                    width: 3,
+                })
+            }
             #[test]
             fn returns_81_cells() {
-                assert_eq!(create_cells(&SETTING).len(), 81)
+                assert_eq!(create_cells(&setting()).len(), 81)
             }
             #[test]
             fn last_cell_position_is_8_8() {
-                assert_eq!(create_cells(&SETTING)[80].borrow().pos, Position(8, 8));
+                assert_eq!(create_cells(&setting())[80].borrow().pos, Position(8, 8));
             }
         }
     }
@@ -165,7 +170,7 @@ mod tests {
         use super::*;
         #[test]
         fn cell_can_remove_answer_candidate() {
-            let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+            let mut cell = Cell::new(Position(1, 1), setting().answer_candidate());
             assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
             cell.remove_answer_candidate(4);
             assert_eq!(cell.answer_candidate, [1, 2, 3, 5, 6]);
@@ -174,7 +179,7 @@ mod tests {
         }
         #[test]
         fn test_remove_all_candidate() {
-            let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+            let mut cell = Cell::new(Position(1, 1), setting().answer_candidate());
             assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
             cell.remove_answer_candidate(1);
             cell.remove_answer_candidate(2);
@@ -189,7 +194,7 @@ mod tests {
 
             #[test]
             fn test_get_lonely() {
-                let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+                let mut cell = Cell::new(Position(1, 1), setting().answer_candidate());
                 cell.remove_answer_candidate(1);
                 cell.remove_answer_candidate(2);
                 cell.remove_answer_candidate(4);
@@ -202,7 +207,7 @@ mod tests {
             use super::*;
             #[test]
             fn clear_candidate() {
-                let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+                let mut cell = Cell::new(Position(1, 1), setting().answer_candidate());
                 assert_eq!(cell.answer_candidate, [1, 2, 3, 4, 5, 6]);
                 cell.set_answer(4);
                 assert_eq!(cell.answer_candidate, []);
@@ -210,7 +215,7 @@ mod tests {
         }
         #[test]
         fn has_answer_candidate_returns_true_when_candidate_not_exists() {
-            let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+            let mut cell = Cell::new(Position(1, 1), setting().answer_candidate());
             cell.remove_answer_candidate(1);
             cell.remove_answer_candidate(3);
             cell.remove_answer_candidate(5);
@@ -218,7 +223,7 @@ mod tests {
         }
         #[test]
         fn has_answer_candidate_returns_true_when_candidate_exists() {
-            let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+            let mut cell = Cell::new(Position(1, 1), setting().answer_candidate());
             cell.remove_answer_candidate(1);
             cell.remove_answer_candidate(3);
             cell.remove_answer_candidate(5);
@@ -228,7 +233,7 @@ mod tests {
             use super::*;
             #[test]
             fn return_answer_if_answered() {
-                let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+                let mut cell = Cell::new(Position(1, 1), setting().answer_candidate());
                 cell.set_answer(1);
                 assert_eq!(cell.answer(), Some(1));
             }
@@ -237,12 +242,12 @@ mod tests {
             use super::*;
             #[test]
             fn returns_6_when_cell_has_6_answer_candidate() {
-                let cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+                let cell = Cell::new(Position(1, 1), setting().answer_candidate());
                 assert_eq!(cell.answer_candidate_count(), 6);
             }
             #[test]
             fn returns_true_when_cell_doesnt_have_answer_candidate() {
-                let mut cell = Cell::new(Position(1, 1), SETTING.answer_candidate());
+                let mut cell = Cell::new(Position(1, 1), setting().answer_candidate());
                 cell.remove_answer_candidate(1);
                 cell.remove_answer_candidate(2);
                 cell.remove_answer_candidate(3);

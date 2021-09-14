@@ -27,7 +27,7 @@ impl Solver {
             let before_count = game.answered_count();
             Self::fill_lonely_in_cell(&mut game);
             Self::fill_lonely_in_group(&mut game);
-            match game.status() {
+            match game.check_status() {
                 GameState::Complete => return Some(game),
                 GameState::Failure => return None,
                 _ => {}
@@ -57,6 +57,9 @@ impl Solver {
             .iter()
             .filter(|c| c.borrow().answer_candidate_count() != 0)
             .collect();
+        if cells.len() == 0 {
+            return Some(game.clone());
+        }
         let solved_game = cells[0]
             .borrow()
             .answer_candidate()
@@ -117,11 +120,14 @@ impl Solver {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::normal_game::setting::BlockSize;
     use crate::normal_game::setting::GameSetting;
-    const SETTING: GameSetting = GameSetting {
-        block_height: 1,
-        block_width: 3,
-    };
+    fn setting() -> GameSetting {
+        GameSetting::new(BlockSize {
+            height: 1,
+            width: 3,
+        })
+    }
     // const GAME: NormalGame = NormalGame::new(SETTING);
     mod fill_lonely {
         use super::*;
@@ -129,7 +135,7 @@ mod test {
         /// 1 つのグループにおいてとある候補が 1 つの cell にしか存在しない場合に答えを確定できることを確認する
         #[test]
         fn fill() {
-            let mut game = NormalGame::new(SETTING);
+            let mut game = NormalGame::new(setting());
             // [1][ ][3]
             // [ ][ ][ ]
             // [ ][ ][ ] の状態にする👇
@@ -156,13 +162,15 @@ mod test {
         use super::*;
         mod setting_1_2 {
             use super::*;
-            const SETTING: GameSetting = GameSetting {
-                block_height: 1,
-                block_width: 2,
-            };
+            fn setting() -> GameSetting {
+                GameSetting::new(BlockSize {
+                    height: 1,
+                    width: 2,
+                })
+            }
             #[test]
             fn test() {
-                let mut game = NormalGame::new(SETTING);
+                let mut game = NormalGame::new(setting());
                 game.load("1");
                 let solver = Solver { game };
                 let solved_game = solver.solve();
@@ -171,14 +179,16 @@ mod test {
         }
         mod setting_3_3 {
             use super::*;
-            const SETTING: GameSetting = GameSetting {
-                block_height: 3,
-                block_width: 3,
-            };
+            fn setting() -> GameSetting {
+                GameSetting::new(BlockSize {
+                    height: 3,
+                    width: 3,
+                })
+            }
             #[test]
             // #[ignore]
             fn intermediate1_96_9x9() {
-                let mut game = NormalGame::new(SETTING);
+                let mut game = NormalGame::new(setting());
                 game.load(
                     "4       1| 5   1 4 |  8 476  | 79|  3 7 2|      59|  681 9| 4 9   7|2       5",
                 );
@@ -189,14 +199,14 @@ mod test {
             #[test]
             // #[ignore]
             fn from_empty_9x9() {
-                let game = NormalGame::new(SETTING);
+                let game = NormalGame::new(setting());
                 let solver = Solver { game };
                 let game = solver.solve().unwrap();
                 assert!(game.to_string().starts_with("123456789"));
             }
             #[test]
             fn returns_none_when_failed_to_solve() {
-                let mut game = NormalGame::new(SETTING);
+                let mut game = NormalGame::new(setting());
                 game.load(
                     "45      1| 5   1 4 |  8 476  | 79|  3 7 2|      59|  681 9| 4 9   7|2       5",
                 );
@@ -204,6 +214,35 @@ mod test {
                 let game = solver.solve();
                 assert!(game.is_none());
             }
+        }
+    }
+    mod it_can_specify_arbitrary_answer_candidate {
+        // It is possible to specify an arbitrary answer_candidate at the time of game generation.
+        use super::*;
+
+        #[test]
+        fn test_1234() {
+            let game = NormalGame::new(GameSetting::new_with_answer_candidate(
+                BlockSize {
+                    height: 2,
+                    width: 2,
+                },
+                vec![1, 2, 3, 4],
+            ));
+            let solved_game = Solver::new(&game).solve();
+            assert_eq!(solved_game.unwrap().to_string(), "1234|3412|2143|4321")
+        }
+        #[test]
+        fn test_4321() {
+            let game = NormalGame::new(GameSetting::new_with_answer_candidate(
+                BlockSize {
+                    height: 2,
+                    width: 2,
+                },
+                vec![4, 3, 2, 1],
+            ));
+            let solved_game = Solver::new(&game).solve();
+            assert_eq!(solved_game.unwrap().to_string(), "4321|2143|1432|3214")
         }
     }
 }

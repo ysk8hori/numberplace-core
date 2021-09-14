@@ -1,6 +1,7 @@
 use crate::normal_game::cell;
 use crate::normal_game::setting;
 use std::cell::RefCell;
+use std::collections::HashSet;
 use std::rc::Rc;
 
 // #[derive(Debug)]
@@ -50,6 +51,19 @@ impl Group {
 
     pub fn is_all_clear_answer_candidate(&self) -> bool {
         self.answer_candidate.len() == 0
+    }
+
+    pub fn is_duplicate_answer(&self) -> bool {
+        let answers: Vec<u8> = self
+            .cells()
+            .iter()
+            .map(|c| c.borrow().answer())
+            .filter(|a| a.is_some())
+            .map(|a| a.unwrap())
+            .collect();
+        let answers_len = answers.len();
+        let answers_hash: HashSet<u8> = answers.into_iter().collect();
+        return answers_len != answers_hash.len();
     }
 }
 
@@ -115,8 +129,8 @@ fn create_block_groups(
     let mut vec: Vec<Rc<RefCell<Group>>> = vec![];
     for start_pos in block_start_positions {
         let mut one_group_cells: Vec<Rc<RefCell<cell::Cell>>> = vec![];
-        for y in 0..setting.block_height {
-            for x in 0..setting.block_width {
+        for y in 0..setting.block_height() {
+            for x in 0..setting.block_width() {
                 let pos = start_pos.move_y(y).move_x(x);
                 one_group_cells.push(
                     cells
@@ -139,12 +153,12 @@ fn create_block_start_positions(setting: &setting::GameSetting) -> Vec<cell::Pos
     let side_num_list: Vec<u8> = (0..setting.side_size()).collect();
     let block_start_y_list: Vec<u8> = side_num_list
         .iter()
-        .filter(|n| *n % setting.block_height == 0)
+        .filter(|n| *n % setting.block_height() == 0)
         .map(|n| *n)
         .collect();
     let block_start_x_list: Vec<u8> = side_num_list
         .iter()
-        .filter(|n| *n % setting.block_width == 0)
+        .filter(|n| *n % setting.block_width() == 0)
         .map(|n| *n)
         .collect();
     block_start_y_list
@@ -162,13 +176,17 @@ fn create_block_start_positions(setting: &setting::GameSetting) -> Vec<cell::Pos
 #[cfg(test)]
 mod tests {
     use super::*;
-    const SETTING: setting::GameSetting = setting::GameSetting {
-        block_height: 2,
-        block_width: 3,
-    };
+    use crate::normal_game::setting::BlockSize;
+
+    fn setting() -> setting::GameSetting {
+        setting::GameSetting::new(BlockSize {
+            height: 2,
+            width: 3,
+        })
+    }
     #[test]
     fn test_create_vertical_groups() {
-        let vg = create_vertical_groups(&cell::create_cells(&SETTING), &SETTING);
+        let vg = create_vertical_groups(&cell::create_cells(&setting()), &setting());
         assert_eq!(vg.len(), 6);
         assert_eq!(vg[0].borrow().cells.len(), 6);
         assert_eq!(
@@ -190,7 +208,7 @@ mod tests {
     }
     #[test]
     fn test_create_horizontal_groups() {
-        let hg = create_horizontal_groups(&cell::create_cells(&SETTING), &SETTING);
+        let hg = create_horizontal_groups(&cell::create_cells(&setting()), &setting());
         assert_eq!(hg.len(), 6);
         assert_eq!(hg[0].borrow().cells.len(), 6);
         assert_eq!(
@@ -214,7 +232,7 @@ mod tests {
         use super::*;
         #[test]
         fn test_create_block_start_positions() {
-            let block_start_positions = create_block_start_positions(&SETTING);
+            let block_start_positions = create_block_start_positions(&setting());
             assert_eq!(
                 block_start_positions,
                 vec![
@@ -229,17 +247,17 @@ mod tests {
         }
         #[test]
         fn block_group_count() {
-            let groups = create_block_groups(&cell::create_cells(&SETTING), &SETTING);
+            let groups = create_block_groups(&cell::create_cells(&setting()), &setting());
             assert_eq!(groups.len(), 6);
         }
         #[test]
         fn block_group_cell_count() {
-            let groups = create_block_groups(&cell::create_cells(&SETTING), &SETTING);
+            let groups = create_block_groups(&cell::create_cells(&setting()), &setting());
             assert!(groups.iter().all(|g| g.borrow().cells.len() == 6));
         }
         #[test]
         fn first_block_group_cells() {
-            let groups = create_block_groups(&cell::create_cells(&SETTING), &SETTING);
+            let groups = create_block_groups(&cell::create_cells(&setting()), &setting());
             assert_eq!(
                 groups[0]
                     .borrow()
@@ -259,7 +277,7 @@ mod tests {
         }
         #[test]
         fn last_block_group_cells() {
-            let groups = create_block_groups(&cell::create_cells(&SETTING), &SETTING);
+            let groups = create_block_groups(&cell::create_cells(&setting()), &setting());
             assert_eq!(
                 groups[5]
                     .borrow()
@@ -280,7 +298,7 @@ mod tests {
     }
     #[test]
     fn get_lonely_returns_lonely() {
-        let g = create_horizontal_groups(&cell::create_cells(&SETTING), &SETTING);
+        let g = create_horizontal_groups(&cell::create_cells(&setting()), &setting());
         // index が 2 以外の cell の解答候補から 3 を除去
         for (i, cell) in g[0].borrow().cells.iter().enumerate() {
             if i == 2 {
@@ -302,5 +320,34 @@ mod tests {
                 (cell::Position::new(4, 0), 5)
             ]
         );
+    }
+    mod is_duplicate_answer {
+        use super::*;
+        #[test]
+        fn duplicated() {
+            let g = create_horizontal_groups(&cell::create_cells(&setting()), &setting());
+            let g = g[0].borrow_mut();
+            let cells = g.cells();
+            cells[0].borrow_mut().set_answer(1);
+            cells[1].borrow_mut().set_answer(1);
+            cells[2].borrow_mut().set_answer(3);
+            cells[3].borrow_mut().set_answer(4);
+            cells[4].borrow_mut().set_answer(5);
+            cells[5].borrow_mut().set_answer(6);
+            assert!(g.is_duplicate_answer());
+        }
+        #[test]
+        fn not_duplicated() {
+            let g = create_horizontal_groups(&cell::create_cells(&setting()), &setting());
+            let g = g[0].borrow_mut();
+            let cells = g.cells();
+            cells[0].borrow_mut().set_answer(1);
+            cells[1].borrow_mut().set_answer(2);
+            cells[2].borrow_mut().set_answer(3);
+            cells[3].borrow_mut().set_answer(4);
+            cells[4].borrow_mut().set_answer(5);
+            cells[5].borrow_mut().set_answer(6);
+            assert!(!g.is_duplicate_answer());
+        }
     }
 }

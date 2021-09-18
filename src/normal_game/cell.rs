@@ -20,6 +20,9 @@ impl Cell {
     pub fn pos(&self) -> Position {
         self.pos
     }
+    pub fn move_to(&mut self, pos: Position) {
+        self.pos = pos;
+    }
 
     pub fn answer_candidate(&self) -> std::slice::Iter<u8> {
         self.answer_candidate.iter()
@@ -71,11 +74,20 @@ impl Position {
     pub fn y(&self) -> u8 {
         self.1
     }
-    pub fn move_x(&self, count: u8) -> Position {
-        Position(self.0 + count, self.1)
+    pub fn move_x(&self, count: i16) -> Position {
+        let x = match (self.0 as i16) + count {
+            x if 0 <= x => x as u8,
+            _ => panic!("The Cell position must be a positive number."),
+        };
+        Position(x, self.1)
     }
-    pub fn move_y(&self, count: u8) -> Position {
-        Position(self.0, self.1 + count)
+    pub fn move_y(&self, count: i16) -> Position {
+        let y = match (self.1 as i16) + count {
+            y if 0 <= y => y as u8,
+            _ => panic!("The Cell position must be a positive number."),
+        };
+        Position(self.0, y)
+        // Position(self.0, self.1 + count)
     }
 }
 
@@ -158,8 +170,17 @@ mod tests {
             assert_eq!(Position::new(1, 2), Position::new(1, 2));
         }
         #[test]
-        fn test_move_x() {
+        fn test_move_right() {
             assert_eq!(Position::new(1, 2).move_x(3), Position::new(4, 2))
+        }
+        #[test]
+        fn test_move_left() {
+            assert_eq!(Position::new(1, 2).move_x(-1), Position::new(0, 2))
+        }
+        #[test]
+        #[should_panic]
+        fn test_move_left_negative() {
+            assert_eq!(Position::new(1, 2).move_x(-3), Position::new(0, 2))
         }
         #[test]
         fn test_move_y() {

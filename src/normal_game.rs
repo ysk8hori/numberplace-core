@@ -24,6 +24,9 @@ impl NormalGame {
         }
     }
 
+    pub fn setting(&self) -> &setting::GameSetting {
+        &self.setting
+    }
     pub fn cells(&self) -> &Vec<Rc<RefCell<cell::Cell>>> {
         &self.cells
     }

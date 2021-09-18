@@ -131,7 +131,7 @@ fn create_block_groups(
         let mut one_group_cells: Vec<Rc<RefCell<cell::Cell>>> = vec![];
         for y in 0..setting.block_height() {
             for x in 0..setting.block_width() {
-                let pos = start_pos.move_y(y).move_x(x);
+                let pos = start_pos.move_y(y as i16).move_x(x as i16);
                 one_group_cells.push(
                     cells
                         .iter()

@@ -1,6 +1,5 @@
 use crate::normal_game::cell::Cell;
 use crate::normal_game::cell::Position;
-use crate::normal_game::setting::GameSetting;
 use crate::normal_game::NormalGame;
 use core::cell::RefCell;
 use rand::prelude::*;
@@ -161,6 +160,7 @@ impl NormalGame {
 mod tests {
     use super::*;
     use crate::normal_game::setting::BlockSize;
+    use crate::normal_game::setting::GameSetting;
     #[test]
     fn test_shuffle_rows() {
         let mut game = NormalGame::new(GameSetting::new(BlockSize {

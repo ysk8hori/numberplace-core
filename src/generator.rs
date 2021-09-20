@@ -8,14 +8,19 @@ use std::rc::Rc;
 
 impl NormalGame {
     pub fn shuffle(&mut self) {
-        let gen_range = |len: usize| -> usize {
+        self.shuffle_manualy(|len: usize| -> usize {
             let mut rng = thread_rng();
             rng.gen_range(0..len)
-        };
-        self.shuffle_rows(gen_range);
-        self.shuffle_cols(gen_range);
-        self.shuffle_row_blocks(gen_range);
-        self.shuffle_col_blocks(gen_range);
+        })
+    }
+    fn shuffle_manualy<F>(&mut self, random_index: F)
+    where
+        F: Fn(usize) -> usize,
+    {
+        self.shuffle_cols(&random_index);
+        self.shuffle_rows(&random_index);
+        self.shuffle_row_blocks(&random_index);
+        self.shuffle_col_blocks(&random_index);
     }
     fn shuffle_rows<F>(&mut self, random_index: F)
     where
@@ -200,6 +205,32 @@ mod tests {
         assert_eq!(
             game.to_string(),
             "253614|361425|142536|526341|634152|415263"
+        );
+    }
+    #[test]
+    fn how_to_reverse() {
+        let mut game = NormalGame::new(GameSetting::new(BlockSize {
+            height: 3,
+            width: 3,
+        }));
+        game.load("582397146|496152387|371486952|148639725|629875431|735241698|953768214|264513879|817924563");
+        game.shuffle_manualy(|len| len - 1);
+        assert_eq!(
+            game.to_string(),
+            "365429718|978315462|412867359|896142537|134578926|527936841|259684173|783251694|641793285"
+        );
+    }
+    #[test]
+    fn test_shuffle() {
+        let mut game = NormalGame::new(GameSetting::new(BlockSize {
+            height: 3,
+            width: 3,
+        }));
+        game.load("582397146|496152387|371486952|148639725|629875431|735241698|953768214|264513879|817924563");
+        game.shuffle();
+        assert_ne!(
+            game.to_string(),
+            "582397146|496152387|371486952|148639725|629875431|735241698|953768214|264513879|817924563"
         );
     }
 }

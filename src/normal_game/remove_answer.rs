@@ -1,3 +1,4 @@
+use crate::normal_game::cell::Cell;
 use crate::normal_game::cell::Position;
 use crate::normal_game::group::Group;
 use crate::normal_game::NormalGame;
@@ -17,9 +18,26 @@ impl NormalGame {
         target_groups
             .iter()
             .for_each(|g| g.borrow_mut().restore_answer_candidate(removed_answer));
-        cell.borrow_mut().restore_answer_candidate(
-            &self.find_answer_candidate_that_all_groups_hold(target_groups),
-        );
+        let positions_into_target_groups: Vec<Position> = target_groups
+            .iter()
+            .map(|g| {
+                let poslist: Vec<Position> = g
+                    .borrow()
+                    .cells()
+                    .iter()
+                    .map(|c| c.borrow().pos())
+                    .collect();
+                poslist
+            })
+            .flatten()
+            .collect();
+        for pos in positions_into_target_groups {
+            let groups = self.find_groups(pos);
+            self.find_cell(pos)
+                .unwrap()
+                .borrow_mut()
+                .restore_answer_candidate(&self.find_answer_candidate_that_all_groups_hold(groups));
+        }
         self.answered_count -= 1;
         Some(removed_answer)
     }

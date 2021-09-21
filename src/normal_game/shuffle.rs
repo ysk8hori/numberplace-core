@@ -5,19 +5,33 @@ use core::cell::RefCell;
 use rand::prelude::*;
 use std::rc::Rc;
 
-// pub fn shuffle(normal_game: &NormalGame) -> NormalGame {
-//     let mut game = normal_game.clone();
-//     game.shuffle();
-//     game
-// }
-
 impl NormalGame {
-    pub fn shuffle(&mut self) {
-        self.shuffle_manualy(|len: usize| -> usize {
+    pub fn shuffle(&self) -> NormalGame {
+        let mut game = self.clone();
+        game.shuffle_manualy(|len: usize| -> usize {
             let mut rng = thread_rng();
             rng.gen_range(0..len)
-        })
+        });
+        game
     }
+    pub fn reverse(&self) -> NormalGame {
+        let mut game = self.clone();
+        game.shuffle_manualy(|len| len - 1);
+        game
+    }
+    pub fn reverse_x(&self) -> NormalGame {
+        let mut game = self.clone();
+        game.shuffle_cols(|len| len - 1);
+        game.shuffle_col_blocks(|len| len - 1);
+        game
+    }
+    pub fn reverse_y(&self) -> NormalGame {
+        let mut game = self.clone();
+        game.shuffle_rows(|len| len - 1);
+        game.shuffle_row_blocks(|len| len - 1);
+        game
+    }
+
     fn shuffle_manualy<F>(&mut self, random_index: F)
     where
         F: Fn(usize) -> usize,
@@ -233,7 +247,7 @@ mod tests {
             width: 3,
         }));
         game.load("582397146|496152387|371486952|148639725|629875431|735241698|953768214|264513879|817924563");
-        game.shuffle();
+        let game = game.shuffle();
         assert_ne!(
             game.to_string(),
             "582397146|496152387|371486952|148639725|629875431|735241698|953768214|264513879|817924563"

@@ -91,6 +91,15 @@ impl Group {
         }
         self.answer_candidate.push(answer_candidate);
     }
+
+    pub fn answer_count(&self) -> usize {
+        let cells: Vec<&Rc<RefCell<cell::Cell>>> = self
+            .cells()
+            .iter()
+            .filter(|c| c.borrow().answer().is_some())
+            .collect();
+        cells.len()
+    }
 }
 
 pub fn create_groups(

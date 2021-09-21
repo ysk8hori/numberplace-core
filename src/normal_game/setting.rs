@@ -4,7 +4,7 @@ pub struct GameSetting {
     answer_candidate: Vec<u8>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BlockSize {
     pub height: u8,
     pub width: u8,
@@ -37,5 +37,8 @@ impl GameSetting {
     }
     pub fn block_width(&self) -> u8 {
         self.block_size.width
+    }
+    pub fn block_size(&self) -> BlockSize {
+        self.block_size
     }
 }

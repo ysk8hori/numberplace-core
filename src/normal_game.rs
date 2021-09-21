@@ -6,6 +6,7 @@ pub mod group;
 pub mod remove_answer;
 pub mod setting;
 pub mod shuffle;
+pub mod solve;
 
 pub struct NormalGame {
     setting: setting::GameSetting,
@@ -150,6 +151,33 @@ impl NormalGame {
         }
         str.pop();
         return str;
+    }
+    pub fn to_string_with_newline(&self) -> String {
+        let mut str = String::new();
+        for y in 0..self.setting.side_size() {
+            for x in 0..self.setting.side_size() {
+                let str2 = match self
+                    .find_cell(cell::Position::new(x, y))
+                    .unwrap()
+                    .borrow()
+                    .answer()
+                {
+                    Some(a) => a.to_string(),
+                    None => " ".to_string(),
+                };
+                str = format!("{}{}{}", str, if x == 0 { "" } else { "," }, str2);
+            }
+            str = format!("{}{}", str, '\n');
+        }
+        str.pop();
+        return str;
+    }
+}
+
+impl PartialEq for NormalGame {
+    fn eq(&self, other: &Self) -> bool {
+        self.setting().block_size() == other.setting().block_size()
+            && self.to_string_with_comma() == other.to_string_with_comma()
     }
 }
 

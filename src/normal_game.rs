@@ -3,7 +3,9 @@ use std::rc::Rc;
 
 pub mod cell;
 pub mod group;
+pub mod remove_answer;
 pub mod setting;
+pub mod shuffle;
 
 pub struct NormalGame {
     setting: setting::GameSetting,
@@ -57,12 +59,8 @@ impl NormalGame {
     }
 
     pub fn set_answer(&mut self, pos: cell::Position, answer: u8) {
-        let cell = self
-            .cells()
-            .iter()
-            .find(|c| c.borrow().pos() == pos)
-            .unwrap();
-        if cell.borrow().answer() != None {
+        let cell = self.find_cell(pos).unwrap();
+        if cell.borrow().answer().is_some() {
             return;
         }
         cell.borrow_mut().set_answer(answer);

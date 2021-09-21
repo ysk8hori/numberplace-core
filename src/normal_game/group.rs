@@ -65,6 +65,32 @@ impl Group {
         let answers_hash: HashSet<u8> = answers.into_iter().collect();
         return answers_len != answers_hash.len();
     }
+
+    pub fn answer_candidate(&self) -> Vec<u8> {
+        self.answer_candidate.clone()
+    }
+
+    pub fn restore_answer_candidate(&mut self, answer_candidate: u8) {
+        if self
+            .answer_candidate
+            .iter()
+            .find(|a| **a == answer_candidate)
+            .is_some()
+        {
+            return;
+        }
+        if self
+            .cells()
+            .iter()
+            .map(|c| c.borrow().answer())
+            .filter(|answer| answer.is_some())
+            .map(|answer| answer.unwrap())
+            .any(|answer| answer == answer_candidate)
+        {
+            return;
+        }
+        self.answer_candidate.push(answer_candidate);
+    }
 }
 
 pub fn create_groups(
@@ -348,6 +374,19 @@ mod tests {
             cells[4].borrow_mut().set_answer(5);
             cells[5].borrow_mut().set_answer(6);
             assert!(!g.is_duplicate_answer());
+        }
+    }
+    mod restore_answer_candidate {
+        use super::*;
+        #[test]
+        fn it_added_to_answer_candidate() {
+            let g = create_horizontal_groups(&cell::create_cells(&setting()), &setting());
+            let mut g = g[0].borrow_mut();
+            g.remove_answer_candidate(1);
+            g.remove_answer_candidate(2);
+            g.remove_answer_candidate(3);
+            g.restore_answer_candidate(2);
+            assert_eq!(g.answer_candidate, [4, 5, 6, 2]);
         }
     }
 }

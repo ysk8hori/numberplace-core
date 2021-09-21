@@ -52,12 +52,22 @@ impl Cell {
         self.answer_candidate.clear();
     }
 
+    pub fn remove_answer(&mut self) -> Option<u8> {
+        let answer = self.answer;
+        self.answer = None;
+        answer
+    }
+
     pub fn has_answer_candidate(&self, candidate: u8) -> bool {
         self.answer_candidate.iter().find(|a| **a == candidate) != None
     }
 
     pub fn answer_candidate_count(&self) -> usize {
         self.answer_candidate.len()
+    }
+
+    pub fn restore_answer_candidate(&mut self, answer_candidate: &Vec<u8>) {
+        self.answer_candidate = answer_candidate.clone();
     }
 }
 
@@ -276,6 +286,41 @@ mod tests {
                 cell.remove_answer_candidate(5);
                 cell.remove_answer_candidate(6);
                 assert_eq!(cell.answer_candidate_count(), 0);
+            }
+        }
+        mod remove_answer {
+            use super::*;
+            #[test]
+            fn it_will_become_none_after_deletion() {
+                let mut cell = Cell::new(Position(1, 1), setting().answer_candidate());
+                cell.set_answer(3);
+                cell.remove_answer();
+                assert_eq!(cell.answer(), None);
+            }
+            #[test]
+            fn it_return_the_removed_answer() {
+                let mut cell = Cell::new(Position(1, 1), setting().answer_candidate());
+                cell.set_answer(3);
+                let removed_answer = cell.remove_answer();
+                assert_eq!(removed_answer, Some(3));
+            }
+            #[test]
+            fn it_return_none_when_no_answer() {
+                let mut cell = Cell::new(Position(1, 1), setting().answer_candidate());
+                let removed_answer = cell.remove_answer();
+                assert_eq!(removed_answer, None);
+            }
+        }
+        mod restore_answer_candidate {
+            use super::*;
+            #[test]
+            fn it_restore_answer_candidate() {
+                let mut cell = Cell::new(Position(1, 1), setting().answer_candidate());
+                cell.remove_answer_candidate(1);
+                cell.remove_answer_candidate(2);
+                cell.remove_answer_candidate(3);
+                cell.restore_answer_candidate(&vec![2, 4, 6]);
+                assert_eq!(cell.answer_candidate, [2, 4, 6]);
             }
         }
     }

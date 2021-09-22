@@ -2,12 +2,13 @@ use crate::normal_game::cell::Position;
 use crate::normal_game::setting::BlockSize;
 use crate::normal_game::setting::GameSetting;
 use crate::normal_game::NormalGame;
+use crate::pattern::AnswerPattern;
 use rand::prelude::*;
 
 impl NormalGame {
     pub fn generate(block_size: BlockSize) -> NormalGame {
-        let solved_game = NormalGame::generate_random_solved_game(block_size);
-        let game = NormalGame::to_issue(solved_game);
+        let solved_game = Self::generate_random_solved_game(block_size);
+        let game = Self::to_issue(solved_game);
         game
     }
 
@@ -15,6 +16,8 @@ impl NormalGame {
         let mut game = solved_game.clone();
         let mut rng = thread_rng();
         let mut count = 0;
+        let mut trush: Vec<Position> = vec![];
+        // let mut poslist: Vec<Position> = game.cells().iter().map(|c| c.borrow().pos()).collect();
         loop {
             let mut poslist: Vec<Position> = game
                 .groups()
@@ -32,12 +35,18 @@ impl NormalGame {
                 .iter()
                 .filter(|c| c.borrow().answer().is_some())
                 .map(|c| c.borrow().pos())
+                .filter(|p| trush.iter().find(|p2| *p == **p2).is_none())
                 .collect();
+            if poslist.len() == 0 {
+                println!("A");
+                break;
+            }
             let index = rng.gen_range(0..poslist.len());
             let pos = poslist.remove(index);
 
             let mut tmp_game = game.clone();
             tmp_game.remove_answer(pos);
+            trush.push(pos);
 
             let maybe_solved = tmp_game.simple_solve();
             if maybe_solved.is_some() {
@@ -48,7 +57,8 @@ impl NormalGame {
                 // If it is still not solved after few times,
                 // the issue is considered complete before removing the answer.
                 count += 1;
-                if count > 3 {
+                if count > 5 {
+                    println!("B");
                     break;
                 }
             }
@@ -66,6 +76,19 @@ impl NormalGame {
             random_sort_answer_candidate.push(answer_candidate.remove(index));
         }
 
+        if let Some(solved_str) = AnswerPattern::create_solved_string_from_pattern(
+            &block_size,
+            &random_sort_answer_candidate,
+        ) {
+            let mut game = NormalGame::new(GameSetting::new_with_answer_candidate(
+                block_size,
+                random_sort_answer_candidate,
+            ));
+            game.load(&solved_str);
+            game.shuffle();
+            return game;
+        }
+
         let game = NormalGame::new(GameSetting::new_with_answer_candidate(
             block_size,
             random_sort_answer_candidate,
@@ -80,15 +103,27 @@ impl NormalGame {
 mod tests {
     use super::*;
     use crate::normal_game::setting::BlockSize;
-    #[test]
-    #[ignore]
-    fn generate_6x6() {
-        let game = NormalGame::generate(BlockSize {
-            height: 3,
-            width: 2,
-        });
-        println!("{}", game.to_string_with_newline());
-        assert!(false);
+    mod generate {
+        use super::*;
+        #[test]
+        #[ignore]
+        fn generate_6x6() {
+            let game = NormalGame::generate(BlockSize {
+                height: 3,
+                width: 2,
+            });
+            println!("{}", game.to_string_with_newline());
+            assert!(false);
+        }
+        #[test]
+        fn generate() {
+            let game = NormalGame::generate(BlockSize {
+                height: 4,
+                width: 4,
+            });
+            println!("{}", game.to_string_with_newline());
+            assert!(false);
+        }
     }
     mod to_issue_9x9 {
         use super::*;

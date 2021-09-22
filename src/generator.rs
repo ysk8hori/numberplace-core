@@ -1,13 +1,8 @@
-use crate::normal_game::cell::Cell;
 use crate::normal_game::cell::Position;
 use crate::normal_game::setting::BlockSize;
 use crate::normal_game::setting::GameSetting;
-// use crate::solver::Solver;
-// use crate::normal_game::shuffle::shuffle;
 use crate::normal_game::NormalGame;
-use core::cell::RefCell;
 use rand::prelude::*;
-use std::rc::Rc;
 
 impl NormalGame {
     pub fn generate(block_size: BlockSize) -> NormalGame {
@@ -18,13 +13,7 @@ impl NormalGame {
 
     fn to_issue(solved_game: NormalGame) -> NormalGame {
         let mut game = solved_game.clone();
-        // let mut poslist: Vec<Position> = game.cells().iter().map(|c| c.borrow().pos()).collect();
         let mut rng = thread_rng();
-        // while poslist.len() > game.cells().len() / 2 {
-        //     let index = rng.gen_range(0..poslist.len());
-        //     let pos = poslist.remove(index);
-        //     game.remove_answer(pos);
-        // }
         let mut count = 0;
         loop {
             let mut poslist: Vec<Position> = game
@@ -50,20 +39,16 @@ impl NormalGame {
             let mut tmp_game = game.clone();
             tmp_game.remove_answer(pos);
 
-            let solved = tmp_game.solve().unwrap();
-            let reverse = tmp_game.reverse().solve().unwrap().reverse();
-            let reverse_y = tmp_game.reverse_y().solve().unwrap().reverse_y();
-            let reverse_x = tmp_game.reverse_x().solve().unwrap().reverse_x();
-            if solved_game == solved
-                && solved_game == reverse
-                && solved_game == reverse_y
-                && solved_game == reverse_x
-            {
+            let maybe_solved = tmp_game.simple_solve();
+            if maybe_solved.is_some() {
                 game.remove_answer(pos);
                 count = 0;
             } else {
+                // If it cannot be solved by a simple_solve, try another number.
+                // If it is still not solved after few times,
+                // the issue is considered complete before removing the answer.
                 count += 1;
-                if count > game.setting().side_size() {
+                if count > 3 {
                     break;
                 }
             }
@@ -85,7 +70,7 @@ impl NormalGame {
             block_size,
             random_sort_answer_candidate,
         ));
-        let mut solved_game = game.solve().unwrap();
+        let solved_game = game.solve().unwrap();
         solved_game.shuffle();
         solved_game
     }
@@ -96,25 +81,19 @@ mod tests {
     use super::*;
     use crate::normal_game::setting::BlockSize;
     #[test]
-    fn test() {
+    #[ignore]
+    fn generate_6x6() {
         let game = NormalGame::generate(BlockSize {
             height: 3,
             width: 2,
         });
         println!("{}", game.to_string_with_newline());
-        assert!(true);
+        assert!(false);
     }
-    #[test]
-    fn test_2_2() {
-        let game = NormalGame::generate(BlockSize {
-            height: 2,
-            width: 2,
-        });
-        assert!(true);
-    }
-    mod to_issue {
+    mod to_issue_9x9 {
         use super::*;
         #[test]
+        #[ignore]
         fn test() {
             let mut game = NormalGame::new(GameSetting::new(BlockSize {
                 height: 3,
@@ -123,7 +102,22 @@ mod tests {
             game.load("174392865|682715943|935468721|528176439|417839652|369254187|893541276|746923518|251687394");
             let game = NormalGame::to_issue(game);
             println!("{}", game.to_string_with_newline());
-            assert!(true);
+            assert!(false);
+        }
+    }
+    mod to_issue_16x16 {
+        use super::*;
+        #[test]
+        #[ignore]
+        fn test() {
+            let mut game = NormalGame::new(GameSetting::new(BlockSize {
+                height: 4,
+                width: 4,
+            }));
+            game.load("1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16|5,6,7,8,9,10,11,12,13,14,15,16,1,2,3,4|9,10,11,12,13,14,15,16,1,2,3,4,5,6,7,8|13,14,15,16,1,2,3,4,5,6,7,8,9,10,11,12|2,3,4,1,6,7,8,5,10,11,12,9,14,15,16,13|6,7,8,5,10,11,12,9,14,15,16,13,2,3,4,1|10,11,12,9,14,15,16,13,2,3,4,1,6,7,8,5|14,15,16,13,2,3,4,1,6,7,8,5,10,11,12,9|3,4,1,2,7,8,5,6,11,12,9,10,15,16,13,14|7,8,5,6,11,12,9,10,15,16,13,14,3,4,1,2|11,12,9,10,15,16,13,14,3,4,1,2,7,8,5,6|15,16,13,14,3,4,1,2,7,8,5,6,11,12,9,10|4,1,2,3,8,5,6,7,12,9,10,11,16,13,14,15|8,5,6,7,12,9,10,11,16,13,14,15,4,1,2,3|12,9,10,11,16,13,14,15,4,1,2,3,8,5,6,7|16,13,14,15,4,1,2,3,8,5,6,7,12,9,10,11");
+            let game = NormalGame::to_issue(game);
+            println!("{}", game.to_string_with_newline());
+            assert!(false);
         }
     }
 }

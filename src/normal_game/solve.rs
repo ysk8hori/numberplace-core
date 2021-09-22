@@ -29,6 +29,21 @@ impl NormalGame {
             }
         }
     }
+    pub fn simple_solve(&self) -> Option<NormalGame> {
+        let mut game = self.clone();
+        loop {
+            let before_count = game.answered_count();
+            Self::fill_lonely_in_cell(&mut game);
+            Self::fill_lonely_in_group(&mut game);
+            match game.check_status() {
+                GameState::Complete => return Some(game),
+                _ => {}
+            }
+            if before_count == game.answered_count() {
+                return None;
+            }
+        }
+    }
 
     /// If no cell or group of cells with a single answer_candidate is found,
     /// it finds the cell with the least answer_candidate among the unanswered cells, sets a temporary value, and solves.
@@ -52,21 +67,20 @@ impl NormalGame {
         if cells.len() == 0 {
             return Some(game.clone());
         }
-        let solved_game = cells[0]
-            .borrow()
-            .answer_candidate()
-            .map(|candidate| {
-                let mut new_game = game.clone();
-                new_game.set_answer(cells[0].borrow().pos(), *candidate);
-                // let solver = Solver::new(&new_game);
-                new_game.solve()
-            })
-            .find(|g| g.is_some());
-        if let Some(Some(game)) = solved_game {
-            return Some(game);
-        } else {
-            return None;
+
+        // let mut solved_game: Option<NormalGame> = None;
+        for candidate in cells[0].borrow().answer_candidate() {
+            let mut new_game = game.clone();
+            new_game.set_answer(cells[0].borrow().pos(), *candidate);
+            // let solver = Solver::new(&new_game);
+            let new_game = new_game.solve();
+            if new_game.is_some() {
+                // solved_game = new_game;
+                // break;
+                return new_game;
+            }
         }
+        None
     }
 
     /// If there is only one possible answer in each cell, confirm it.

@@ -1,6 +1,6 @@
 [package]
 name = "numberplace-core"
-version = "0.1.0"
+version = "0.1.1-1"
 authors = ["ysk8hori <ysk8.hori@gmail.com>"]
 edition = "2018"
 description = "Generate number-place (Sudoku)."

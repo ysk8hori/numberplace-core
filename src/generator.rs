@@ -6,13 +6,13 @@ use crate::pattern::AnswerPattern;
 use rand::prelude::*;
 
 impl NormalGame {
-    pub fn generate(block_size: BlockSize) -> NormalGame {
+    pub fn generate(block_size: BlockSize) -> (NormalGame, NormalGame) {
         let solved_game = Self::generate_random_solved_game(block_size);
-        let game = Self::to_issue(solved_game);
-        game
+        let game = Self::to_issue(&solved_game);
+        (game, solved_game)
     }
 
-    fn to_issue(solved_game: NormalGame) -> NormalGame {
+    fn to_issue(solved_game: &NormalGame) -> NormalGame {
         let mut game = solved_game.clone();
         let mut rng = thread_rng();
         let mut count = 0;
@@ -108,7 +108,7 @@ mod tests {
         #[test]
         #[ignore]
         fn generate_6x6() {
-            let game = NormalGame::generate(BlockSize {
+            let (game, _) = NormalGame::generate(BlockSize {
                 height: 3,
                 width: 2,
             });
@@ -116,8 +116,9 @@ mod tests {
             assert!(false);
         }
         #[test]
+        #[ignore]
         fn generate() {
-            let game = NormalGame::generate(BlockSize {
+            let (game, _) = NormalGame::generate(BlockSize {
                 height: 4,
                 width: 4,
             });
@@ -135,7 +136,7 @@ mod tests {
                 width: 3,
             }));
             game.load("174392865|682715943|935468721|528176439|417839652|369254187|893541276|746923518|251687394");
-            let game = NormalGame::to_issue(game);
+            let game = NormalGame::to_issue(&game);
             println!("{}", game.to_string_with_newline());
             assert!(false);
         }
@@ -150,7 +151,7 @@ mod tests {
                 width: 4,
             }));
             game.load("1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16|5,6,7,8,9,10,11,12,13,14,15,16,1,2,3,4|9,10,11,12,13,14,15,16,1,2,3,4,5,6,7,8|13,14,15,16,1,2,3,4,5,6,7,8,9,10,11,12|2,3,4,1,6,7,8,5,10,11,12,9,14,15,16,13|6,7,8,5,10,11,12,9,14,15,16,13,2,3,4,1|10,11,12,9,14,15,16,13,2,3,4,1,6,7,8,5|14,15,16,13,2,3,4,1,6,7,8,5,10,11,12,9|3,4,1,2,7,8,5,6,11,12,9,10,15,16,13,14|7,8,5,6,11,12,9,10,15,16,13,14,3,4,1,2|11,12,9,10,15,16,13,14,3,4,1,2,7,8,5,6|15,16,13,14,3,4,1,2,7,8,5,6,11,12,9,10|4,1,2,3,8,5,6,7,12,9,10,11,16,13,14,15|8,5,6,7,12,9,10,11,16,13,14,15,4,1,2,3|12,9,10,11,16,13,14,15,4,1,2,3,8,5,6,7|16,13,14,15,4,1,2,3,8,5,6,7,12,9,10,11");
-            let game = NormalGame::to_issue(game);
+            let game = NormalGame::to_issue(&game);
             println!("{}", game.to_string_with_newline());
             assert!(false);
         }

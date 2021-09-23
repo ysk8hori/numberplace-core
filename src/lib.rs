@@ -3,7 +3,7 @@ use crate::normal_game::setting::GameSetting;
 use crate::normal_game::NormalGame;
 
 mod generator;
-mod normal_game;
+pub mod normal_game;
 mod pattern;
 
 /// Generate a number-place problem.

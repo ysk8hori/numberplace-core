@@ -21,14 +21,6 @@ mod pattern;
 /// about 30 seconds for 4x5 and 5x4 sizes, and about a minute for 5x5 sizes.
 /// 素早くと言っても、3x4,4x3のサイズで数秒、4x5,5x4のサイズで約30秒、5x5のサイズで1分程度の時間はかかると思われる。
 ///
-/// # Examples
-///
-/// ```
-/// let (issue, solved) = generate_numberplace(BlockSize {
-///     height: 3,
-///     width: 3,
-/// });
-/// ```
 pub fn generate_numberplace(block_size: BlockSize) -> (NormalGame, NormalGame) {
     NormalGame::generate(block_size)
 }
@@ -42,17 +34,6 @@ pub fn generate_numberplace(block_size: BlockSize) -> (NormalGame, NormalGame) {
 /// - `"5 2 9 1|   1   8|3    6  2| 4    7|6       1|  5    9|9  7    4| 6   3|  7 2 5 3"`
 /// - `"7, , ,11,4, , ,10,2, , ,1,12, , ,5| , ,6, , ,3, , , , ,16, , ,10| ,10,14, , ,13,7, , ,5,6, , ,3,1,|2, , , , , , ,15,13, , , , , , ,14|8, , , , , , ,1,12, , , , , , ,11| ,13,12, , ,8,15, , ,9,5, , ,14,16| , ,10, , ,2, , , , ,11, , ,7,|15, , ,9,5, , ,12,4, , ,2,6, , ,8|10, , ,5,1, , ,16,15, , ,9,8, , ,4| , ,8, , ,10, , , , ,1, , ,6| ,7,11, , ,4,8, , ,14,12, , ,5,3|4, , , , , , ,5,7, , , , , , ,10|9, , , , , , ,14,10, , , , , , ,1| ,6,2, , ,7,5, , ,11,9, , ,4,8| , ,13, , ,15, , , , ,3, , ,16|16, , ,3,10, , ,4,6, , ,14,13, , ,12"`
 ///
-/// # Examples
-///
-/// ```
-/// let solved = solve_numberplace(
-///     BlockSize {
-///         height: 3,
-///         width: 3,
-///     },
-///     "5 2 9 1|   1   8|3    6  2| 4    7|6       1|  5    9|9  7    4| 6   3|  7 2 5 3",
-/// );
-/// ```
 pub fn solve_numberplace(block_size: BlockSize, issue: &str) -> Option<NormalGame> {
     let mut game = NormalGame::new(GameSetting::new(block_size));
     game.load(issue);
